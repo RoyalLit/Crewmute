@@ -95,8 +95,10 @@ function AnimatedTabItem({
   }, [isFocused]);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    // Expand the flex weight of the active tab so it takes more horizontal space
-    const flexVal = 1 + progress.value * 1.5;
+    // Fixed width animation: Inactive is 50, Active is 110.
+    // This ensures the sum of all widths is always exactly the same (4*50 + 110 = 310),
+    // preventing the choppy "rearranging" layout shifts!
+    const w = 50 + progress.value * 60;
 
     const activeBgColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
     const bgColor = interpolateColor(
@@ -106,7 +108,7 @@ function AnimatedTabItem({
     );
 
     return {
-      flex: flexVal,
+      width: w,
       backgroundColor: bgColor,
       borderRadius: 100,
     };
@@ -115,7 +117,7 @@ function AnimatedTabItem({
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
       opacity: progress.value,
-      // Animate width to expand/collapse the text smoothly
+      // Grow width to reveal text smoothly
       width: progress.value * 50,
       marginLeft: progress.value * 6,
     };
@@ -125,7 +127,6 @@ function AnimatedTabItem({
   const iconSize = config.iconSize ?? 22;
   const inactiveColor = colors.text.placeholder;
   
-  // Use theme text color for active state to look sleek
   const activeColor = colors.text.primary;
   const iconColor = isFocused ? activeColor : inactiveColor;
 
