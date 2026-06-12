@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.crewmute.app",
-      "deploymentTarget": "14.0"
+      "deploymentTarget": "26.0"
     },
     "android": {
       "adaptiveIcon": {

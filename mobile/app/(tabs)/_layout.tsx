@@ -1,180 +1,259 @@
 /**
- * Tab bar layout — the most platform-sensitive file in the mobile app.
+ * Tab bar layout — Floating Animated Pill Navbar
  *
- * Implements the exact BlurView pattern from DESIGN.md §5.5:
- *   iOS  → BlurView (intensity 60, systemChromeMaterial) — Liquid Glass effect
- *   Android → semi-opaque solid View — no BlurView (perf on mid-range devices)
- *
- * Both platforms:
- *   - Height: TAB_BAR_HEIGHT (64px) + safe area bottom inset
- *   - useSafeAreaInsets() for home indicator padding
- *
- * Per PRD.md §8.1:
- *   "BlurView must not be rendered on Android — gated with Platform.OS === 'ios'.
- *    Android solid fallback must not cause jank."
- *
- * Per DESIGN.md §5.5:
- *   Tab bar background is NOT a theme token — it is transparent on iOS
- *   (BlurView handles it) and a hardcoded rgba value per mode on Android.
- *
- * Tab configuration per DESIGN.md §5.5:
- *   1. Explore (compass)
- *   2. Post (add-circle) — center tab, slightly larger icon
- *   3. My Rides (car)
- *   4. Chats (chatbubble)
- *   5. Profile (person)
+ * Implements an island-style floating tab bar with a cool expanding animation
+ * for the active tab (showing both icon and text in a pill).
  */
 
-import { BlurView } from 'expo-blur';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolateColor,
+} from 'react-native-reanimated';
 
 import { useTheme } from '../../src/design/theme';
-import { TAB_BAR_HEIGHT, brandColors } from '../../src/design/tokens';
 import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+// ─── Tab configuration ────────────────────────────────────────
 
-interface TabIconProps {
-  name: IoniconName;
-  focused: boolean;
-  size?: number;
+interface TabConfig {
+  name: string;
+  title: string;
+  icon: { active: string; inactive: string };
+  iconSize?: number;
+  accessibilityLabel: string;
 }
 
-function TabIcon({ name, focused, size = 24 }: TabIconProps): React.JSX.Element {
-  const { colors } = useTheme();
+const TAB_CONFIGS: TabConfig[] = [
+  {
+    name: 'index',
+    title: 'Home',
+    icon: { active: 'home', inactive: 'home-outline' },
+    accessibilityLabel: 'Explore tab — browse available rides',
+  },
+  {
+    name: 'post',
+    title: 'Post',
+    icon: { active: 'add-circle', inactive: 'add-circle-outline' },
+    accessibilityLabel: 'Post a ride tab',
+  },
+  {
+    name: 'rides',
+    title: 'Rides',
+    icon: { active: 'car', inactive: 'car-outline' },
+    accessibilityLabel: 'My rides tab — rides you posted or joined',
+  },
+  {
+    name: 'chats',
+    title: 'Chats',
+    icon: { active: 'chatbubble', inactive: 'chatbubble-outline' },
+    accessibilityLabel: 'Chats tab — your active conversations',
+  },
+  {
+    name: 'profile',
+    title: 'Profile',
+    icon: { active: 'person', inactive: 'person-outline' },
+    accessibilityLabel: 'Profile tab — your account and settings',
+  },
+];
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// ─── Animated Tab Item ─────────────────────────────────────────
+
+function AnimatedTabItem({
+  isFocused,
+  route,
+  navigation,
+  config,
+  colors,
+  isDark,
+}: {
+  isFocused: boolean;
+  route: any;
+  navigation: any;
+  config: TabConfig;
+  colors: any;
+  isDark: boolean;
+}) {
+  const progress = useSharedValue(isFocused ? 1 : 0);
+
+  React.useEffect(() => {
+    progress.value = withSpring(isFocused ? 1 : 0, {
+      damping: 18,
+      stiffness: 150,
+      mass: 0.8,
+    });
+  }, [isFocused]);
+
+  const animatedContainerStyle = useAnimatedStyle(() => {
+    // Expand the flex weight of the active tab so it takes more horizontal space
+    const flexVal = 1 + progress.value * 1.5;
+
+    const activeBgColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+    const bgColor = interpolateColor(
+      progress.value,
+      [0, 1],
+      ['transparent', activeBgColor]
+    );
+
+    return {
+      flex: flexVal,
+      backgroundColor: bgColor,
+      borderRadius: 100,
+    };
+  });
+
+  const animatedTextStyle = useAnimatedStyle(() => {
+    return {
+      opacity: progress.value,
+      // Animate width to expand/collapse the text smoothly
+      width: progress.value * 50,
+      marginLeft: progress.value * 6,
+    };
+  });
+
+  const iconName = isFocused ? config.icon.active : config.icon.inactive;
+  const iconSize = config.iconSize ?? 22;
+  const inactiveColor = colors.text.placeholder;
+  
+  // Use theme text color for active state to look sleek
+  const activeColor = colors.text.primary;
+  const iconColor = isFocused ? activeColor : inactiveColor;
+
   return (
-    <Ionicons
-      name={name}
-      size={size}
-      color={focused ? colors.interactive.primary : colors.text.placeholder}
-      accessibilityRole="image"
-    />
+    <AnimatedPressable
+      onPress={() => {
+        if (!isFocused && navigation) {
+          navigation.navigate(route.name);
+        }
+      }}
+      style={[tabStyles.tabPressable, animatedContainerStyle]}
+      accessibilityLabel={config.accessibilityLabel}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+    >
+      <View style={tabStyles.tabItemCore}>
+        <Ionicons name={iconName as IoniconsName} size={iconSize} color={iconColor} />
+        <Animated.View style={[{ overflow: 'hidden' }, animatedTextStyle]}>
+          <Text style={[tabStyles.tabLabelText, { color: activeColor }]} numberOfLines={1}>
+            {config.title}
+          </Text>
+        </Animated.View>
+      </View>
+    </AnimatedPressable>
   );
 }
 
-export default function TabsLayout(): React.JSX.Element {
+// ─── Custom Floating Navbar ───────────────────────────────────
+
+function CustomTabBar(props: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-
-  const tabBarHeight = TAB_BAR_HEIGHT + insets.bottom;
-
-  // Android solid background per DESIGN.md §5.5
-  // Never a theme token — hardcoded rgba per mode as specified
-  const androidBackground = isDark
-    ? 'rgba(15,15,26,0.94)'
-    : 'rgba(247,247,252,0.94)';
-
-  const androidBorderColor = colors.border.default;
+  const routes = props.state?.routes ?? [];
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 4,
-        },
-        tabBarActiveTintColor: colors.interactive.primary,
-        tabBarInactiveTintColor: colors.text.placeholder,
-        tabBarStyle: {
-          position: 'absolute',
-          height: tabBarHeight,
-          paddingBottom: insets.bottom,
-          // Background is handled by the tabBarBackground component below
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-        },
-        // Platform-aware tab bar background — the key pattern from DESIGN.md §5.5
-        tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
-            // iOS: Liquid Glass blur — BlurView handles background
-            // Content scrolls and refracts beneath it
-            <BlurView
-              intensity={60}
-              tint="systemChromeMaterial"
-              style={StyleSheet.absoluteFill}
-            />
-          ) : (
-            // Android: solid semi-opaque View — no BlurView
-            // Per PRD §8.1: "No BlurView code path executes on Android"
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  backgroundColor: androidBackground,
-                  borderTopWidth: 1,
-                  borderTopColor: androidBorderColor,
-                },
-              ]}
-            />
-          ),
-      }}
+    <View
+      style={[
+        tabStyles.containerWrapper,
+        { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 20 },
+      ]}
+      pointerEvents="box-none"
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'compass' : 'compass-outline'} focused={focused} />
-          ),
-          tabBarAccessibilityLabel: 'Explore tab — browse available rides',
-        }}
-      />
-      <Tabs.Screen
-        name="post"
-        options={{
-          title: 'Post',
-          tabBarIcon: ({ focused }) => (
-            // Center tab: slightly larger icon (28px) per DESIGN.md §8.2
-            <TabIcon
-              name={focused ? 'add-circle' : 'add-circle-outline'}
-              focused={focused}
-              size={28}
+      <View
+        style={[
+          tabStyles.floatingPill,
+          {
+            backgroundColor: isDark ? '#1C1C2E' : '#FFFFFF',
+            shadowColor: isDark ? '#000' : colors.text.secondary,
+          },
+        ]}
+      >
+        {routes.map((route: any, index: number) => {
+          const isFocused = (props.state?.index ?? 0) === index;
+          const config = TAB_CONFIGS[index];
+          if (!config) return null;
+
+          return (
+            <AnimatedTabItem
+              key={route.key}
+              isFocused={isFocused}
+              route={route}
+              navigation={props.navigation}
+              config={config}
+              colors={colors}
+              isDark={isDark}
             />
-          ),
-          tabBarActiveTintColor: brandColors.electricViolet,
-          tabBarAccessibilityLabel: 'Post a ride tab',
-        }}
-      />
-      <Tabs.Screen
-        name="rides"
-        options={{
-          title: 'My Rides',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'car' : 'car-outline'} focused={focused} />
-          ),
-          tabBarAccessibilityLabel: 'My rides tab — rides you posted or joined',
-        }}
-      />
-      <Tabs.Screen
-        name="chats"
-        options={{
-          title: 'Chats',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              name={focused ? 'chatbubble' : 'chatbubble-outline'}
-              focused={focused}
-            />
-          ),
-          tabBarAccessibilityLabel: 'Chats tab — your active conversations',
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} />
-          ),
-          tabBarAccessibilityLabel: 'Profile tab — your account and settings',
-        }}
-      />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ─── Layout ────────────────────────────────────────────────────
+
+export default function TabsLayout(): React.JSX.Element {
+  return (
+    <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="post" />
+      <Tabs.Screen name="rides" />
+      <Tabs.Screen name="chats" />
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }
+
+// ─── Styles ────────────────────────────────────────────────────
+
+const tabStyles = StyleSheet.create({
+  containerWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  floatingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 100,
+    width: '90%',
+    maxWidth: 400,
+    // Soft shadow for the floating effect
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  tabPressable: {
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabItemCore: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabelText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+});
