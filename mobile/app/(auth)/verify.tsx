@@ -5,8 +5,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../src/design/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { brandColors } from '../../src/design/tokens';
-import { apiClient } from '../../src/api/client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VerifyScreen() {
   const { colors } = useTheme();
@@ -44,7 +42,7 @@ export default function VerifyScreen() {
     if (text.length === 1 && index === 5) {
       const fullOtp = newOtp.join('');
       if (fullOtp.length === 6) {
-        verifyOtp(fullOtp);
+        verifyOtp();
       }
     }
   };
@@ -55,35 +53,31 @@ export default function VerifyScreen() {
     }
   };
 
-  const verifyOtp = async (code: string) => {
+  const verifyOtp = async () => {
     setError('');
     setLoading(true);
-    try {
-      const response = await apiClient.post('/auth/verify-otp', { email, otp: code });
-      const { accessToken } = response.data.data;
-      
-      // Save token
-      await AsyncStorage.setItem('crewmute_token', accessToken);
-      
-      // Navigate to tabs
-      router.replace('/(tabs)');
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Invalid OTP');
-    } finally {
+    
+    // Simulate API call
+    setTimeout(() => {
       setLoading(false);
-    }
+      // Route to onboarding so the user can finish setting up their profile
+      router.replace({ 
+        pathname: '/(auth)/onboarding', 
+        params: { 
+          email: params.email,
+          name: params.name,
+          college: params.college
+        } 
+      });
+    }, 1500);
   };
 
   const resendOtp = async () => {
     if (countdown > 0) return;
-    try {
-      // Actually need to hit a resend endpoint if one existed
-      // For now, assume /auth/resend-otp
-      await apiClient.post('/auth/resend-otp', { email });
+    // Simulate resend
+    setTimeout(() => {
       setCountdown(60);
-    } catch (err: any) {
-      setError('Failed to resend OTP');
-    }
+    }, 1000);
   };
 
   return (

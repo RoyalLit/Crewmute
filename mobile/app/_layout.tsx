@@ -24,14 +24,15 @@ import {
   useFonts,
 } from '@expo-google-fonts/plus-jakarta-sans';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { SplashScreen, Stack } from 'expo-router';
-import React, { useEffect } from 'react';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+
+import { useAuthStore } from '../src/store/authStore';
 
 import { ThemeProvider } from '../src/design/theme';
 import { queryClient } from '../src/lib/queryClient';
 
 import { BootScreen } from '../src/components/BootScreen';
-import { useState } from 'react';
 
 // Prevent the splash screen from auto-hiding before fonts are loaded
 SplashScreen.preventAutoHideAsync();
@@ -40,6 +41,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout(): React.JSX.Element | null {
   const [bootComplete, setBootComplete] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -59,6 +64,20 @@ export default function RootLayout(): React.JSX.Element | null {
   if (!fontsLoaded && !fontError) {
     return null;
   }
+
+  useEffect(() => {
+    if (!fontsLoaded || !bootComplete) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // Redirect to the login page.
+      router.replace('/(auth)/login');
+    } else if (isAuthenticated && inAuthGroup) {
+      // Redirect to the tabs page.
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, segments, fontsLoaded, bootComplete]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

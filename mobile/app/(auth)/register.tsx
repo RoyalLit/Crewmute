@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { brandColors } from '../../src/design/tokens';
-import { apiClient } from '../../src/api/client';
 
 export default function RegisterScreen() {
   const { colors } = useTheme();
@@ -31,15 +30,12 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
-    try {
-      await apiClient.post('/auth/register', form);
-      // Pass email to the verify screen so it knows who to verify
-      router.push({ pathname: '/(auth)/verify', params: { email: form.email } });
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Registration failed');
-    } finally {
+    // Simulate API call
+    setTimeout(() => {
       setLoading(false);
-    }
+      // Pass email to the verify screen so it knows who to verify
+      router.push({ pathname: '/(auth)/verify', params: { email: form.email, name: form.name, college: form.college } });
+    }, 1500);
   };
 
   return (

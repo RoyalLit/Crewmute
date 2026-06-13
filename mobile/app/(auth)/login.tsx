@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing } from '../../src/design/tokens';
+import { useAuthStore } from '../../src/store/authStore';
 
 export default function LoginScreen() {
   const { colors, isDark } = useTheme();
@@ -14,6 +15,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const loginAction = useAuthStore((state) => state.login);
 
   const handleLogin = async () => {
     // Basic validation
@@ -23,8 +25,15 @@ export default function LoginScreen() {
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      // For now, since auth is not hooked up, we'll just redirect to tabs
-      router.replace('/(tabs)');
+      // Mock login state. The root _layout.tsx will automatically redirect us!
+      loginAction({
+        id: '1',
+        name: 'Mock User',
+        email: email,
+        college: 'Mock College',
+        city: 'Mock City',
+        isVerified: true
+      });
     }, 1500);
   };
 
