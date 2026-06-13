@@ -19,13 +19,19 @@ import { Router, type Request, type Response } from 'express';
 
 import { isDatabaseConnected } from '../db/connection';
 
-// TODO(feature/auth): mount authRoutes when auth feature is implemented
-// TODO(feature/users): mount userRoutes when users feature is implemented
-// TODO(feature/rides): mount rideRoutes when rides feature is implemented
-// TODO(feature/requests): mount requestRoutes when requests feature is implemented
-// TODO(feature/chats): mount chatRoutes when chats feature is implemented
+import authRoutes from '../features/auth/auth.routes';
+import usersRoutes from '../features/users/users.routes';
+import ridesRoutes from '../features/rides/rides.routes';
+import requestsRoutes from '../features/requests/requests.routes';
+
+// TODO(feature/chats): mount chatRoutes when chats feature is implemented (HTTP routes if any, sockets are attached in server.ts)
 
 const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/users', usersRoutes);
+router.use('/rides', ridesRoutes);
+router.use('/requests', requestsRoutes);
 
 // ── Liveness probe ────────────────────────────────────────────────────────────
 // Returns 200 as long as the Node.js process is running.

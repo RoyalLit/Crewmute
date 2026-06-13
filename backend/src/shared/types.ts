@@ -5,23 +5,29 @@
  * Only types that are genuinely cross-cutting belong here.
  */
 
-import type { Request } from 'express';
+
+
+/**
+ * Authenticated user payload attached to the request by auth middleware.
+ * Services and controllers reference req.user as this type.
+ */
+import { JwtPayload } from '../features/auth/auth.types';
+
+declare global {
+  namespace Express {
+    export interface Request {
+      user?: JwtPayload;
+    }
+  }
+}
 
 /**
  * Authenticated user payload attached to the request by auth middleware.
  * Services and controllers reference req.user as this type.
  */
 export interface RequestUser {
-  id: string;
-  email: string;
-}
-
-/**
- * Express Request extended with an authenticated user.
- * Use AuthenticatedRequest in protected route handlers.
- */
-export interface AuthenticatedRequest extends Request {
-  user: RequestUser;
+  userId: string;
+  tokenVersion: number;
 }
 
 /**

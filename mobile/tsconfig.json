@@ -8,7 +8,8 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "types": [
-      "jest"
+      "jest",
+      "node"
     ],
     "paths": {
       "@components/*": [

@@ -18,6 +18,8 @@ import env from './config/env';
 import { connectDB, registerShutdownHandlers } from './db/connection';
 import logger from './shared/logger';
 
+import { initializeSockets } from './features/chats/socket';
+
 async function start(): Promise<void> {
   // Log startup configuration (no secrets) per AGENT_RULES.md §21.1
   logger.info(
@@ -36,6 +38,9 @@ async function start(): Promise<void> {
   const server = app.listen(env.port, () => {
     logger.info({ port: env.port }, `Crewmute API listening on port ${env.port}`);
   });
+
+  // Attach socket.io
+  initializeSockets(server);
 
   // Register SIGTERM/SIGINT handlers for graceful shutdown
   registerShutdownHandlers();

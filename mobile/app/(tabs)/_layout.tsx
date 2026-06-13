@@ -15,6 +15,7 @@ import Animated, {
   withSpring,
   interpolateColor,
 } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
 
 import { useTheme } from '../../src/design/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -65,8 +66,6 @@ const TAB_CONFIGS: TabConfig[] = [
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 // ─── Animated Tab Item ─────────────────────────────────────────
 
 function AnimatedTabItem({
@@ -84,27 +83,27 @@ function AnimatedTabItem({
   colors: any;
   isDark: boolean;
 }) {
+  // Use a local derived value that smoothly transitions between 0 (inactive) and 1 (active)
+  // This prevents the "overshoot" width issues caused by Math.abs(sharedIndex - myIndex)
   const progress = useSharedValue(isFocused ? 1 : 0);
 
   React.useEffect(() => {
     progress.value = withSpring(isFocused ? 1 : 0, {
-      damping: 18,
+      damping: 15,
       stiffness: 150,
-      mass: 0.8,
+      mass: 0.6,
     });
   }, [isFocused]);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    // Fixed width animation: Inactive is 50, Active is 110.
-    // This ensures the sum of all widths is always exactly the same (4*50 + 110 = 310),
-    // preventing the choppy "rearranging" layout shifts!
+    // 50px inactive width, 110px active width
     const w = 50 + progress.value * 60;
 
     const activeBgColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
     const bgColor = interpolateColor(
       progress.value,
       [0, 1],
-      ['transparent', activeBgColor]
+      ['rgba(0,0,0,0)', activeBgColor]
     );
 
     return {
@@ -117,7 +116,6 @@ function AnimatedTabItem({
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
       opacity: progress.value,
-      // Grow width to reveal text smoothly
       width: progress.value * 50,
       marginLeft: progress.value * 6,
     };
@@ -131,26 +129,26 @@ function AnimatedTabItem({
   const iconColor = isFocused ? activeColor : inactiveColor;
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={() => {
         if (!isFocused && navigation) {
           navigation.navigate(route.name);
         }
       }}
-      style={[tabStyles.tabPressable, animatedContainerStyle]}
+      style={tabStyles.tabPressable}
       accessibilityLabel={config.accessibilityLabel}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
     >
-      <View style={tabStyles.tabItemCore}>
+      <Animated.View style={[tabStyles.tabItemCore, animatedContainerStyle]}>
         <Ionicons name={iconName as IoniconsName} size={iconSize} color={iconColor} />
         <Animated.View style={[{ overflow: 'hidden' }, animatedTextStyle]}>
           <Text style={[tabStyles.tabLabelText, { color: activeColor }]} numberOfLines={1}>
             {config.title}
           </Text>
         </Animated.View>
-      </View>
-    </AnimatedPressable>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -161,41 +159,55 @@ function CustomTabBar(props: BottomTabBarProps) {
   const { colors, isDark } = useTheme();
   const routes = props.state?.routes ?? [];
 
+  const innerContent = (
+    <View
+      style={[
+        tabStyles.floatingPill,
+        Platform.OS !== 'ios' && {
+          backgroundColor: isDark ? '#1C1C2E' : '#FFFFFF',
+          elevation: 10,
+        },
+      ]}
+    >
+      {routes.map((route: any, index: number) => {
+        const isFocused = (props.state?.index ?? 0) === index;
+        const config = TAB_CONFIGS[index];
+        if (!config) return null;
+
+        return (
+          <AnimatedTabItem
+            key={route.key}
+            isFocused={isFocused}
+            route={route}
+            navigation={props.navigation}
+            config={config}
+            colors={colors}
+            isDark={isDark}
+          />
+        );
+      })}
+    </View>
+  );
+
   return (
     <View
       style={[
         tabStyles.containerWrapper,
-        { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 20 },
+        { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 16) : 20 },
       ]}
       pointerEvents="box-none"
     >
-      <View
-        style={[
-          tabStyles.floatingPill,
-          {
-            backgroundColor: isDark ? '#1C1C2E' : '#FFFFFF',
-            shadowColor: isDark ? '#000' : colors.text.secondary,
-          },
-        ]}
-      >
-        {routes.map((route: any, index: number) => {
-          const isFocused = (props.state?.index ?? 0) === index;
-          const config = TAB_CONFIGS[index];
-          if (!config) return null;
-
-          return (
-            <AnimatedTabItem
-              key={route.key}
-              isFocused={isFocused}
-              route={route}
-              navigation={props.navigation}
-              config={config}
-              colors={colors}
-              isDark={isDark}
-            />
-          );
-        })}
-      </View>
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          intensity={80}
+          tint={isDark ? 'dark' : 'light'}
+          style={tabStyles.blurContainer}
+        >
+          {innerContent}
+        </BlurView>
+      ) : (
+        innerContent
+      )}
     </View>
   );
 }
@@ -205,6 +217,8 @@ function CustomTabBar(props: BottomTabBarProps) {
 export default function TabsLayout(): React.JSX.Element {
   return (
     <Tabs
+      // NEVER pass tabBar={CustomTabBar} directly, as it causes Invalid Hook Call errors
+      // if React Navigation invokes it as a plain function instead of a component.
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
@@ -235,13 +249,15 @@ const tabStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: 100,
-    width: '90%',
-    maxWidth: 400,
+    alignSelf: 'center', // Hugs the constant 310px total width exactly!
+  },
+  blurContainer: {
+    borderRadius: 100,
+    overflow: 'hidden',
     // Soft shadow for the floating effect
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
-    elevation: 10,
   },
   tabPressable: {
     height: 48,
@@ -252,6 +268,7 @@ const tabStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    height: '100%',
   },
   tabLabelText: {
     fontSize: 13,

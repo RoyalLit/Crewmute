@@ -1,0 +1,49 @@
+import { Schema, model, Document, Types } from 'mongoose';
+
+export interface IRide extends Document {
+  posterId: Types.ObjectId;
+  fromCity: string;
+  toCity: string;
+  departureDate: string; // ISO String (YYYY-MM-DD)
+  departureTime: string; // HH:mm format
+  totalSeats: number;
+  availableSeats: number;
+  farePerSeat: number;
+  cabType: 'Uber Go' | 'Uber XL' | 'Ola Mini' | 'Ola Prime Sedan' | 'Other';
+  status: 'active' | 'cancelled' | 'expired';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const rideSchema = new Schema<IRide>(
+  {
+    posterId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    fromCity: { type: String, required: true, trim: true },
+    toCity: { type: String, required: true, trim: true },
+    departureDate: { type: String, required: true, index: true },
+    departureTime: { type: String, required: true },
+    totalSeats: { type: Number, required: true, min: 1, max: 7 },
+    availableSeats: { type: Number, required: true, min: 0, max: 7 },
+    farePerSeat: { type: Number, required: true, min: 0 },
+    cabType: {
+      type: String,
+      required: true,
+      enum: ['Uber Go', 'Uber XL', 'Ola Mini', 'Ola Prime Sedan', 'Other'],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ['active', 'cancelled', 'expired'],
+      default: 'active',
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Compound index for searching rides
+rideSchema.index({ fromCity: 1, toCity: 1, departureDate: 1, status: 1 });
+
+export const RideModel = model<IRide>('Ride', rideSchema);

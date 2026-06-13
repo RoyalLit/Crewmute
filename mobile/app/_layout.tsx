@@ -30,10 +30,14 @@ import React, { useEffect } from 'react';
 import { ThemeProvider } from '../src/design/theme';
 import { queryClient } from '../src/lib/queryClient';
 
+import { BootScreen } from '../src/components/BootScreen';
+import { useState } from 'react';
+
 // Prevent the splash screen from auto-hiding before fonts are loaded
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout(): React.JSX.Element | null {
+  const [bootComplete, setBootComplete] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -44,12 +48,12 @@ export default function RootLayout(): React.JSX.Element | null {
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      // Hide the splash screen once fonts are ready (or failed to load)
+      // Hide the native splash screen once fonts are ready
+      // This reveals our custom BootScreen which is already mounted with the same #0F0F1A background!
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
-  // Keep rendering null until fonts are loaded — avoids FOUT
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -57,20 +61,11 @@ export default function RootLayout(): React.JSX.Element | null {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        {/*
-         * Stack navigator with two groups:
-         *   (auth) — login, register, OTP screens (no tab bar)
-         *   (tabs) — main app with tab bar
-         *
-         * TODO(feature/auth): add auth guard logic here.
-         * The guard should check storage.getAccessToken() and redirect:
-         *   - No token → Redirect to (auth)
-         *   - Valid token → Redirect to (tabs)
-         */}
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
         </Stack>
+        {!bootComplete && <BootScreen onAnimationDone={() => setBootComplete(true)} />}
       </ThemeProvider>
     </QueryClientProvider>
   );
