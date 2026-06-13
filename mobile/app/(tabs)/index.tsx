@@ -12,21 +12,23 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, View, FlatList, TextInput, Pressable } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TextInput, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '../../src/design/theme';
-import { TAB_BAR_HEIGHT, spacing } from '../../src/design/tokens';
+import { TAB_BAR_HEIGHT, spacing, brandColors } from '../../src/design/tokens';
 import { RideCard, RideCardData } from '../../src/components/RideCard';
+
+import { useThemeStore } from '../../src/store/themeStore';
 
 const DUMMY_RIDES: RideCardData[] = [
   {
     id: '1',
-    fromCity: 'Chandigarh',
-    toCity: 'Amity University Punjab',
-    date: 'Mon, 15 Jun',
-    time: '08:30 AM',
+    fromCity: 'Amity Univ, Noida',
+    toCity: 'Delhi',
+    date: 'Today',
+    time: '4:30 PM',
     posterName: 'Rahul Verma',
     posterCollege: 'Amity University Punjab',
     posterIsVerified: true,
@@ -36,12 +38,13 @@ const DUMMY_RIDES: RideCardData[] = [
   },
   {
     id: '2',
-    fromCity: 'Ambala',
-    toCity: 'Chandigarh',
-    date: 'Tue, 16 Jun',
-    time: '04:00 PM',
+    fromCity: 'North Campus',
+    toCity: 'Gurugram Sec 14',
+    date: 'Today',
+    time: '5:00 PM',
     posterName: 'Priya Singh',
-    posterCollege: 'PEC Chandigarh',
+    posterCollege: 'Delhi Univ, North',
+    posterIsVerified: true,
     seatsLeft: 1,
     fare: 200,
     status: 'Pending',
@@ -62,17 +65,29 @@ const DUMMY_RIDES: RideCardData[] = [
 ];
 
 export default function ExploreScreen(): React.JSX.Element {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const setPreference = useThemeStore((state) => state.setPreference);
   const insets = useSafeAreaInsets();
+
+  const shadowStyle = isDark
+    ? { borderWidth: 1, borderColor: '#2E2E4A' }
+    : {
+        borderWidth: 1,
+        borderColor: 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+        elevation: 2,
+      };
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       {/* 
         Easter Egg hiding BEHIND the physical hardware!
-        Placed absolutely inside the scrolled content at top: 15 (relative to screen top at rest).
-        Because FlatList has paddingTop: insets.top, we negate the padding to place it at physical Y=15.
+        Only applies to iOS since Android punch-holes/bezels vary drastically.
       */}
-      {insets.top > 20 && (
+      {Platform.OS === 'ios' && insets.top > 20 && (
         <View style={[styles.easterEggContainer, { top: -(Math.max(insets.top, spacing.xl)) + 15, zIndex: 999 }]} pointerEvents="none">
           <Text style={[styles.easterEggText, { color: colors.interactive.primary }]}>
             🚗 beep beep!
@@ -81,26 +96,61 @@ export default function ExploreScreen(): React.JSX.Element {
       )}
 
       <View style={styles.headerTop}>
-        <Text style={[styles.title, { color: colors.text.primary }]}>Explore</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.title, { color: colors.text.primary }]}>Find your crew.</Text>
+          <Text style={[styles.subtitle, { color: colors.text.secondary }]}>Where are you heading today?</Text>
+        </View>
         <Pressable 
-          style={[styles.filterButton, { backgroundColor: colors.background.subtle }]}
-          accessibilityLabel="Filter rides"
+          onPress={() => setPreference(isDark ? 'light' : 'dark')}
+          style={[styles.themeToggle, { backgroundColor: colors.background.subtle }]}
+          accessibilityLabel="Toggle Theme"
           accessibilityRole="button"
         >
-          <Ionicons name="options-outline" size={24} color={colors.text.primary} />
+          <Ionicons name={isDark ? "sunny" : "moon"} size={22} color={colors.text.primary} />
         </Pressable>
       </View>
 
-      <View style={[styles.searchContainer, { backgroundColor: colors.background.subtle, borderColor: colors.border.default }]}>
-        <Ionicons name="search" size={20} color={colors.text.placeholder} style={styles.searchIcon} />
-        <TextInput 
-          style={[styles.searchInput, { color: colors.text.primary }]}
-          placeholder="Where are you going?"
-          placeholderTextColor={colors.text.placeholder}
-          editable={false}
-          pointerEvents="none"
-        />
+      {/* Advanced Search Card */}
+      <View style={[styles.searchCard, { backgroundColor: colors.background.card }, shadowStyle]}>
+        
+        {/* Timeline for Search */}
+        <View style={styles.searchTimelineContainer}>
+          <View style={styles.searchTimeline}>
+            <Ionicons name="location" size={16} color={brandColors.electricViolet} />
+            <View style={[styles.searchTimelineLine, { backgroundColor: colors.border.default }]} />
+            <Ionicons name="location-outline" size={16} color={brandColors.coralPink} />
+          </View>
+          
+          <View style={styles.searchInputs}>
+            <View style={[styles.searchInputWrapper, { backgroundColor: colors.background.subtle }]}>
+              <TextInput 
+                style={[styles.searchInput, { color: colors.text.primary }]}
+                placeholder="Leaving from..."
+                placeholderTextColor={colors.text.placeholder}
+              />
+            </View>
+            <View style={[styles.searchInputWrapper, { backgroundColor: colors.background.subtle, marginTop: spacing.sm }]}>
+              <TextInput 
+                style={[styles.searchInput, { color: colors.text.primary }]}
+                placeholder="Going to..."
+                placeholderTextColor={colors.text.placeholder}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.searchActions}>
+          <Pressable style={[styles.dateButton, { backgroundColor: colors.background.subtle }]}>
+            <Ionicons name="calendar-outline" size={18} color={colors.text.primary} style={{ marginRight: 8 }} />
+            <Text style={[styles.dateButtonText, { color: colors.text.primary }]}>Today</Text>
+          </Pressable>
+          <Pressable style={[styles.searchButton, { backgroundColor: brandColors.electricViolet }]}>
+            <Text style={styles.searchButtonText}>Search</Text>
+          </Pressable>
+        </View>
       </View>
+      
+      <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>Active Rides</Text>
     </View>
   );
 
@@ -138,40 +188,95 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   headerContainer: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
-  title: {
-    fontSize: 32,
-    fontFamily: 'PlusJakartaSans-800ExtraBold',
-    letterSpacing: -0.3,
-  },
-  filterButton: {
+  themeToggle: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: spacing.sm,
   },
-  searchContainer: {
+  title: {
+    fontSize: 32,
+    fontFamily: 'PlusJakartaSans-800ExtraBold',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans-400Regular',
+  },
+  searchCard: {
+    borderRadius: 20,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  searchTimelineContainer: {
     flexDirection: 'row',
+    marginBottom: spacing.md,
+  },
+  searchTimeline: {
     alignItems: 'center',
-    height: 52,
+    width: 24,
+    marginRight: spacing.sm,
+    paddingVertical: 14,
+  },
+  searchTimelineLine: {
+    width: 2,
+    flex: 1,
+    marginVertical: 4,
+  },
+  searchInputs: {
+    flex: 1,
+  },
+  searchInputWrapper: {
+    height: 48,
     borderRadius: 12,
-    borderWidth: 1,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
   },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
   searchInput: {
-    flex: 1,
     fontFamily: 'PlusJakartaSans-500Medium',
-    fontSize: 16,
+    fontSize: 15,
+  },
+  searchActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  dateButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateButtonText: {
+    fontFamily: 'PlusJakartaSans-600SemiBold',
+    fontSize: 15,
+  },
+  searchButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'PlusJakartaSans-700Bold',
+    fontSize: 15,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: 'PlusJakartaSans-700Bold',
+    marginBottom: spacing.xs,
   },
 });

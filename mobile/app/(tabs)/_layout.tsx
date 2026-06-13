@@ -18,6 +18,7 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 
 import { useTheme } from '../../src/design/theme';
+import { brandColors } from '../../src/design/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
@@ -77,6 +78,7 @@ function AnimatedTabItem({
   config,
   colors,
   isDark,
+  onPostPress,
 }: {
   isFocused: boolean;
   route: any;
@@ -84,6 +86,7 @@ function AnimatedTabItem({
   config: TabConfig;
   colors: any;
   isDark: boolean;
+  onPostPress?: () => void;
 }) {
   const progress = useSharedValue(isFocused ? 1 : 0);
 
@@ -97,8 +100,8 @@ function AnimatedTabItem({
   }, [isFocused]);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    // 50px inactive width, 110px active width
-    const w = 50 + progress.value * 60;
+    // 44px inactive width, 96px active width
+    const w = 44 + progress.value * 52;
 
     const activeBgColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
     const bgColor = interpolateColor(
@@ -117,8 +120,8 @@ function AnimatedTabItem({
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
       opacity: progress.value,
-      width: progress.value * 50,
-      marginLeft: progress.value * 6,
+      width: progress.value * 44,
+      marginLeft: progress.value * 4,
     };
   });
 
@@ -132,6 +135,10 @@ function AnimatedTabItem({
   return (
     <Pressable
       onPress={() => {
+        if (route.name === 'post') {
+          onPostPress?.();
+          return;
+        }
         if (!isFocused && navigation) {
           navigation.navigate(route.name);
         }
@@ -153,12 +160,52 @@ function AnimatedTabItem({
   );
 }
 
+// ─── Active Tab Glow ────────────────────────────────────────────
+
+function ActiveTabGlow({ activeIndex }: { activeIndex: number }) {
+  const translateX = useSharedValue(60 + activeIndex * 52);
+
+  React.useEffect(() => {
+    translateX.value = withTiming(60 + activeIndex * 52, { 
+      duration: 250, 
+      easing: Easing.out(Easing.cubic) 
+    });
+  }, [activeIndex]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      // Center the 80px orb on the calculated center X
+      transform: [{ translateX: translateX.value - 40 }],
+    };
+  });
+
+  return (
+    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden', borderRadius: 100 }]} pointerEvents="none">
+      <Animated.View 
+        style={[
+          animatedStyle, 
+          { 
+            position: 'absolute', 
+            top: -15, // Lifted slightly so the glow focuses on the top of the pill
+            width: 80, 
+            height: 80, 
+            borderRadius: 40, 
+            backgroundColor: brandColors.electricViolet, 
+            opacity: 0.8 
+          }
+        ]} 
+      />
+    </View>
+  );
+}
+
 // ─── Custom Floating Navbar ───────────────────────────────────
 
-function CustomTabBar(props: BottomTabBarProps) {
+function CustomTabBar(props: BottomTabBarProps & { onPostPress?: () => void }) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
   const routes = props.state?.routes ?? [];
+  const activeIndex = props.state?.index ?? 0;
 
   const innerContent = (
     <View
@@ -167,6 +214,8 @@ function CustomTabBar(props: BottomTabBarProps) {
         Platform.OS !== 'ios' && {
           backgroundColor: isDark ? '#1C1C2E' : '#FFFFFF',
           elevation: 10,
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
         },
       ]}
     >
@@ -184,6 +233,7 @@ function CustomTabBar(props: BottomTabBarProps) {
             config={config}
             colors={colors}
             isDark={isDark}
+            onPostPress={props.onPostPress}
           />
         );
       })}
@@ -194,18 +244,25 @@ function CustomTabBar(props: BottomTabBarProps) {
     <View
       style={[
         tabStyles.containerWrapper,
-        { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 16) : 20 },
+        { 
+          paddingBottom: Platform.OS === 'ios' 
+            ? Math.max(insets.bottom, 16) 
+            : insets.bottom + 16 // Ensures it floats above Android software navigation bars
+        },
       ]}
       pointerEvents="box-none"
     >
       {Platform.OS === 'ios' ? (
-        <BlurView
-          intensity={80}
-          tint={isDark ? 'dark' : 'light'}
-          style={tabStyles.blurContainer}
-        >
-          {innerContent}
-        </BlurView>
+        <View style={tabStyles.blurContainerWrapper}>
+          <ActiveTabGlow activeIndex={activeIndex} />
+          <BlurView
+            intensity={80}
+            tint={isDark ? 'dark' : 'light'}
+            style={tabStyles.blurContainer}
+          >
+            {innerContent}
+          </BlurView>
+        </View>
       ) : (
         innerContent
       )}
@@ -213,22 +270,30 @@ function CustomTabBar(props: BottomTabBarProps) {
   );
 }
 
+import { PostBottomSheet, PostBottomSheetRef } from '../../src/components/PostBottomSheet';
+import { useRef } from 'react';
+
 // ─── Layout ────────────────────────────────────────────────────
 
 export default function TabsLayout(): React.JSX.Element {
+  const bottomSheetRef = useRef<PostBottomSheetRef>(null);
+
   return (
-    <Tabs
-      // NEVER pass tabBar={CustomTabBar} directly, as it causes Invalid Hook Call errors
-      // if React Navigation invokes it as a plain function instead of a component.
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="post" />
-      <Tabs.Screen name="rides" />
-      <Tabs.Screen name="chats" />
-      <Tabs.Screen name="profile" />
-    </Tabs>
+    <>
+      <Tabs
+        // NEVER pass tabBar={CustomTabBar} directly, as it causes Invalid Hook Call errors
+        // if React Navigation invokes it as a plain function instead of a component.
+        tabBar={(props) => <CustomTabBar {...props} onPostPress={() => bottomSheetRef.current?.expand()} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="post" />
+        <Tabs.Screen name="rides" />
+        <Tabs.Screen name="chats" />
+        <Tabs.Screen name="profile" />
+      </Tabs>
+      <PostBottomSheet ref={bottomSheetRef} />
+    </>
   );
 }
 
@@ -247,21 +312,25 @@ const tabStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
     borderRadius: 100,
     alignSelf: 'center', // Hugs the constant 310px total width exactly!
   },
-  blurContainer: {
+  blurContainerWrapper: {
     borderRadius: 100,
-    overflow: 'hidden',
     // Soft shadow for the floating effect
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
   },
+  blurContainer: {
+    borderRadius: 100,
+    overflow: 'hidden',
+  },
   tabPressable: {
-    height: 48,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },

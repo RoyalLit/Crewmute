@@ -1,84 +1,97 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme';
-import { WebView } from 'react-native-webview';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { brandColors } from '../../src/design/tokens';
+import Animated, { 
+  FadeInDown, 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  Easing 
+} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// A premium interactive 3D scene from Spline
-// The user can swipe to rotate the spheres, creating a high-end feel!
-const SPLINE_URL = 'https://my.spline.design/interactivespheres-83b5ed770a84e60b2dcfce1bca0447fa/';
+function AuroraBackground() {
+  const rotation1 = useSharedValue(0);
+  const rotation2 = useSharedValue(0);
+  const rotation3 = useSharedValue(0);
+
+  useEffect(() => {
+    rotation1.value = withRepeat(withTiming(360, { duration: 20000, easing: Easing.linear }), -1, false);
+    rotation2.value = withRepeat(withTiming(-360, { duration: 25000, easing: Easing.linear }), -1, false);
+    rotation3.value = withRepeat(withTiming(360, { duration: 30000, easing: Easing.linear }), -1, false);
+  }, []);
+
+  const style1 = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation1.value}deg` }] }));
+  const style2 = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation2.value}deg` }] }));
+  const style3 = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation3.value}deg` }] }));
+
+  return (
+    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#0A0A12' }]}>
+      <Animated.View style={[style1, { position: 'absolute', top: -height*0.2, left: -width*0.5, width: width*1.5, height: width*1.5, borderRadius: width, backgroundColor: brandColors.electricViolet, opacity: 0.6 }]} />
+      <Animated.View style={[style2, { position: 'absolute', top: height*0.3, right: -width*0.5, width: width*1.2, height: width*1.2, borderRadius: width, backgroundColor: brandColors.coralPink, opacity: 0.5 }]} />
+      <Animated.View style={[style3, { position: 'absolute', bottom: -height*0.2, left: -width*0.2, width: width*1.4, height: width*1.4, borderRadius: width, backgroundColor: '#00FFFF', opacity: 0.4 }]} />
+      {/* Maximum blur intensity to blend the solid circles into a liquid mesh */}
+      <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+    </View>
+  );
+}
 
 export default function LandingScreen() {
   const { colors, isDark } = useTheme();
   const router = useRouter();
-  const [webViewLoaded, setWebViewLoaded] = useState(false);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      {/* 3D Interactive Hero Section via WebView */}
-      <View style={styles.webviewContainer}>
-        <WebView
-          source={{ uri: SPLINE_URL }}
-          style={styles.webview}
-          scrollEnabled={false}
-          onLoad={() => setWebViewLoaded(true)}
-          // Disable bouncing on iOS to make it feel like a native view, not a webpage
-          bounces={false}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-        />
+    <View style={styles.container}>
+      <AuroraBackground />
+
+      <View style={styles.overlayContainer} pointerEvents="box-none">
+        <Animated.View entering={FadeInDown.springify().damping(15).stiffness(100).delay(400)} pointerEvents="box-none">
+          <BlurView 
+            intensity={90} 
+            tint={isDark ? 'dark' : 'light'} 
+            style={styles.glassCard}
+          >
+            <Animated.Text entering={FadeInDown.delay(600)} style={[styles.title, { color: colors.text.primary }]}>
+              Find your crew 🚀
+            </Animated.Text>
+            <Animated.Text entering={FadeInDown.delay(700)} style={[styles.subtitle, { color: colors.text.secondary }]}>
+              Carpool with verified college students. Split fares. Vibe check passed.
+            </Animated.Text>
+
+            <Animated.View entering={FadeInDown.delay(800)} style={styles.buttonContainer}>
+              <Pressable 
+                style={[styles.button, { backgroundColor: colors.interactive.primary }]}
+                onPress={() => router.push('/(auth)/register')}
+              >
+                <Text style={[styles.buttonText, { color: colors.interactive.primaryText }]}>Let's Ride</Text>
+              </Pressable>
+
+              <Pressable 
+                style={[styles.button, styles.secondaryButton, { borderColor: colors.border.default }]}
+                onPress={() => router.push('/(auth)/login')}
+              >
+                <Text style={[styles.buttonText, { color: colors.text.primary }]}>Log In</Text>
+              </Pressable>
+
+              {__DEV__ && (
+                <Pressable 
+                  style={{ alignItems: 'center', marginTop: 12 }}
+                  onPress={() => router.push('/(tabs)')}
+                >
+                  <Text style={[styles.devText, { color: colors.text.placeholder }]}>
+                    Skip to App (Dev Only)
+                  </Text>
+                </Pressable>
+              )}
+            </Animated.View>
+          </BlurView>
+        </Animated.View>
       </View>
-
-      {/* Glassmorphic UI Overlay (mounts after 3D scene loads for performance) */}
-      {webViewLoaded && (
-        <View style={styles.overlayContainer} pointerEvents="box-none">
-          <Animated.View entering={FadeIn.delay(300).duration(1000)} pointerEvents="box-none">
-             <BlurView 
-               intensity={80} 
-               tint={isDark ? 'dark' : 'light'} 
-               style={styles.glassCard}
-             >
-               <Animated.Text entering={FadeInDown.delay(500)} style={[styles.title, { color: colors.text.primary }]}>
-                 Find your crew.
-               </Animated.Text>
-               <Animated.Text entering={FadeInDown.delay(700)} style={[styles.subtitle, { color: colors.text.secondary }]}>
-                 Carpool with verified college students. Split the fare, meet new people, and ride safely.
-               </Animated.Text>
-
-               <Animated.View entering={FadeInDown.delay(900)} style={styles.buttonContainer}>
-                 <Pressable 
-                   style={[styles.button, { backgroundColor: colors.interactive.primary }]}
-                   onPress={() => router.push('/(auth)/register')}
-                 >
-                   <Text style={[styles.buttonText, { color: colors.interactive.primaryText }]}>Get Started</Text>
-                 </Pressable>
-
-                 <Pressable 
-                   style={[styles.button, styles.secondaryButton, { borderColor: colors.border.default }]}
-                   onPress={() => router.push('/(auth)/login')}
-                 >
-                   <Text style={[styles.buttonText, { color: colors.text.primary }]}>Log In</Text>
-                 </Pressable>
-
-                 {__DEV__ && (
-                   <Pressable 
-                     style={{ alignItems: 'center', marginTop: 12 }}
-                     onPress={() => router.push('/(tabs)')}
-                   >
-                     <Text style={[styles.subtitle, { color: colors.text.placeholder, marginBottom: 0 }]}>
-                       Skip to App (Dev Only)
-                     </Text>
-                   </Pressable>
-                 )}
-               </Animated.View>
-             </BlurView>
-          </Animated.View>
-        </View>
-      )}
     </View>
   );
 }
@@ -86,16 +99,6 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  webviewContainer: {
-    ...StyleSheet.absoluteFillObject,
-    // Add 100px to height and translate up to hide Spline's bottom watermark badge
-    height: height + 100,
-    top: -50,
-  },
-  webview: {
-    flex: 1,
-    backgroundColor: 'transparent',
   },
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -138,5 +141,9 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: 'PlusJakartaSans-700Bold',
     fontSize: 16,
+  },
+  devText: {
+    fontFamily: 'PlusJakartaSans-500Medium',
+    fontSize: 14,
   },
 });

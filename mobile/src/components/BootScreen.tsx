@@ -1,54 +1,104 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withDelay,
+  withSpring,
   Easing,
   runOnJS,
-  withSpring
+  interpolate,
 } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
 
+// We use a massive view with a thick border to create a "hole".
+// By animating ONLY the transform scale, we get 120fps hardware acceleration
+// without triggering JS layout thrashing.
+const HOLE_START = 10; 
+const BORDER_SIZE = Math.max(width, height) * 1.5; 
+const TOTAL_SIZE = HOLE_START + BORDER_SIZE * 2;
+const MAX_SCALE = (Math.max(width, height) * 1.5) / HOLE_START;
+
+const LETTERS = ['C', 'R', 'E', 'W', 'M', 'U', 'T', 'E'];
+
 export function BootScreen({ onAnimationDone }: { onAnimationDone: () => void }) {
-  const opacity = useSharedValue(1);
-  const scale = useSharedValue(1);
+  const letterProgress = useSharedValue(0);
+  const letterOpacity = useSharedValue(1);
+  const solidOpacity = useSharedValue(1);
+
+  // Scale of the expanding hole
+  const holeScale = useSharedValue(1);
 
   useEffect(() => {
-    // Zoom out the text slightly with spring, then fade out the whole screen
-    scale.value = withSpring(0.8, { damping: 12, stiffness: 100 }, () => {
-      opacity.value = withDelay(200, withTiming(0, {
-        duration: 400,
-        easing: Easing.out(Easing.ease)
+    // 1. Drop letters in
+    letterProgress.value = withSpring(1, {
+      damping: 12,
+      stiffness: 100,
+      mass: 1,
+    });
+
+    // 2. Explode the circle outwards using GPU scale
+    setTimeout(() => {
+      // Instantly hide the solid background to reveal the 10px hole
+      solidOpacity.value = 0;
+      // Fade out letters
+      letterOpacity.value = withTiming(0, { duration: 150 });
+
+      // Hardware-accelerated scale up!
+      holeScale.value = withTiming(MAX_SCALE, {
+        duration: 800,
+        easing: Easing.inOut(Easing.cubic),
       }, (finished) => {
         if (finished) {
           runOnJS(onAnimationDone)();
         }
-      }));
-    });
+      });
+    }, 1200);
   }, []);
 
-  const containerStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-      // Need pointerEvents='none' implicitly when it hides, but we unmount it anyway.
-    };
-  });
+  const holeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: holeScale.value }],
+  }));
 
-  const textStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-    };
-  });
+  const solidStyle = useAnimatedStyle(() => ({
+    opacity: solidOpacity.value,
+  }));
+
+  const textContainerStyle = useAnimatedStyle(() => ({
+    opacity: letterOpacity.value,
+  }));
 
   return (
-    <Animated.View style={[styles.container, containerStyle]}>
-      <Animated.Text style={[styles.logoText, textStyle]}>
-        CREWMUTE
-      </Animated.Text>
-    </Animated.View>
+    <View style={styles.container} pointerEvents="none">
+      {/* The GPU Accelerated Expanding Hole */}
+      <Animated.View style={[styles.expandingHole, holeStyle]} />
+
+      {/* Solid background covering the initial 10px hole */}
+      <Animated.View style={[styles.solidBg, solidStyle]} />
+
+      {/* Staggered Text */}
+      <Animated.View style={[styles.textContainer, textContainerStyle]} pointerEvents="none">
+        {LETTERS.map((letter, index) => {
+          const animatedStyle = useAnimatedStyle(() => {
+            const progress = Math.max(0, Math.min(1, letterProgress.value * (1 + index * 0.1) - index * 0.1));
+            return {
+              opacity: interpolate(progress, [0, 1], [0, 1]),
+              transform: [
+                { translateY: interpolate(progress, [0, 1], [-50, 0]) },
+                { scale: interpolate(progress, [0, 1], [0.5, 1]) }
+              ],
+            };
+          });
+
+          return (
+            <Animated.Text key={index} style={[styles.letter, animatedStyle]}>
+              {letter}
+            </Animated.Text>
+          );
+        })}
+      </Animated.View>
+    </View>
   );
 }
 
@@ -57,15 +107,34 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width,
     height,
-    backgroundColor: '#0F0F1A', // Matches app.json native splash
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999, // Very top
   },
-  logoText: {
+  solidBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0F0F1A',
+  },
+  expandingHole: {
+    position: 'absolute',
+    top: height / 2 - TOTAL_SIZE / 2,
+    left: width / 2 - TOTAL_SIZE / 2,
+    width: TOTAL_SIZE,
+    height: TOTAL_SIZE,
+    borderRadius: TOTAL_SIZE / 2,
+    borderWidth: BORDER_SIZE,
+    borderColor: '#0F0F1A',
+    backgroundColor: 'transparent',
+  },
+  textContainer: {
+    flexDirection: 'row',
+    zIndex: 5,
+  },
+  letter: {
     fontFamily: 'PlusJakartaSans-800ExtraBold',
-    fontSize: 32,
+    fontSize: 40,
     color: '#FFFFFF',
-    letterSpacing: 8,
+    letterSpacing: 2,
+    marginHorizontal: 1,
   },
 });

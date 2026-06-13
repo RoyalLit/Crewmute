@@ -55,6 +55,8 @@ export function RideCard({ ride, onPress }: RideCardProps) {
   const shadowStyle = isDark
     ? { borderWidth: 1, borderColor: '#2E2E4A' }
     : {
+        borderWidth: 1,
+        borderColor: 'transparent',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
@@ -111,7 +113,7 @@ export function RideCard({ ride, onPress }: RideCardProps) {
             {/* Hardcoded arrival estimation placeholder like the Stitch design */}
             <Text style={[styles.timeText, { color: colors.text.secondary }]}>
               {/* This will eventually be calculated, e.g., ~5:45 PM */}
-              ~ {ride.time.replace(/([0-9]+):([0-9]+) (AM|PM)/, (m, h) => `${parseInt(h) + 1}:45 ${h >= 11 ? 'PM' : 'AM'}`)}
+              ~ {ride.time.replace(/([0-9]+):([0-9]+) (AM|PM)/, (_, h) => `${parseInt(h) + 1}:45 ${parseInt(h) >= 11 && parseInt(h) !== 12 ? 'PM' : 'AM'}`)}
             </Text>
           </View>
         </View>

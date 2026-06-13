@@ -4,42 +4,43 @@ import { brandColors } from '../design/tokens';
 
 export type RideStatus = 'Active' | 'Pending' | 'Accepted' | 'Rejected' | 'Full' | 'Expired' | 'Cancelled';
 
+function hexToRGBA(hex: string, alpha: number) {
+  if (!hex || hex.length < 7) return 'rgba(0,0,0,0.1)';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface StatusChipProps {
   status: RideStatus;
 }
 
 export function StatusChip({ status }: StatusChipProps) {
-  let backgroundColor = '';
   let textColor = '';
 
   switch (status) {
     case 'Active':
-      backgroundColor = '#E8F5F0';
+    case 'Accepted':
       textColor = brandColors.mintGreen;
       break;
     case 'Pending':
-      backgroundColor = '#FFF6E8';
       textColor = brandColors.amber;
       break;
-    case 'Accepted':
-      backgroundColor = '#E8F5F0';
-      textColor = brandColors.mintGreen;
-      break;
     case 'Rejected':
-      backgroundColor = '#FFF0F3';
       textColor = brandColors.coralPink;
       break;
     case 'Full':
-      backgroundColor = '#F0EFFF';
       textColor = brandColors.electricViolet;
       break;
     case 'Expired':
     case 'Cancelled':
     default:
-      backgroundColor = '#F3F4F6';
       textColor = '#8B8FA8';
       break;
   }
+
+  const backgroundColor = hexToRGBA(textColor, 0.15);
 
   return (
     <View style={[styles.container, { backgroundColor }]}>

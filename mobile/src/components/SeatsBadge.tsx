@@ -2,21 +2,28 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { brandColors } from '../design/tokens';
 
+function hexToRGBA(hex: string, alpha: number) {
+  if (!hex || hex.length < 7) return 'rgba(0,0,0,0.1)';
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface SeatsBadgeProps {
   seatsLeft: number;
 }
 
 export function SeatsBadge({ seatsLeft }: SeatsBadgeProps) {
   let color: string = brandColors.mintGreen;
-  let bg: string = '#E8F5F0';
 
   if (seatsLeft === 0) {
     color = brandColors.electricViolet;
-    bg = '#F0EFFF';
   } else if (seatsLeft === 1) {
     color = brandColors.amber;
-    bg = '#FFF6E8';
   }
+
+  const bg = hexToRGBA(color, 0.15);
 
   return (
     <View style={[styles.container, { backgroundColor: bg }]}>

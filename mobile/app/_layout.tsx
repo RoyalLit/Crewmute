@@ -36,6 +36,8 @@ import { useState } from 'react';
 // Prevent the splash screen from auto-hiding before fonts are loaded
 SplashScreen.preventAutoHideAsync();
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 export default function RootLayout(): React.JSX.Element | null {
   const [bootComplete, setBootComplete] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
@@ -59,14 +61,16 @@ export default function RootLayout(): React.JSX.Element | null {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        {!bootComplete && <BootScreen onAnimationDone={() => setBootComplete(true)} />}
-      </ThemeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          {!bootComplete && <BootScreen onAnimationDone={() => setBootComplete(true)} />}
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
