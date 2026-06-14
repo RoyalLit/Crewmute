@@ -64,8 +64,8 @@ export default function VerifyScreen() {
     try {
       const response = await verifyMutation.mutateAsync({ email, otp: fullOtp });
       // Save token
-      if (response?.data?.accessToken) {
-        await AsyncStorage.setItem('crewmute_token', response.data.accessToken);
+      if (response?.data?.tokens?.accessToken) {
+        await AsyncStorage.setItem('crewmute_token', response.data.tokens.accessToken);
       }
       
       // Route to onboarding so the user can finish setting up their profile
