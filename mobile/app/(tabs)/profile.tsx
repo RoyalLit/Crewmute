@@ -10,6 +10,7 @@ import { TAB_BAR_HEIGHT, spacing, brandColors } from '../../src/design/tokens';
 
 import { useAuthStore } from '../../src/store/authStore';
 import { useLogoutMutation } from '../../src/api/authHooks';
+import { Avatar } from '../../src/components/Avatar';
 
 export default function ProfileScreen(): React.JSX.Element {
   const { colors, isDark } = useTheme();
@@ -21,8 +22,6 @@ export default function ProfileScreen(): React.JSX.Element {
   const insets = useSafeAreaInsets();
 
   const isLight = preference === 'light';
-  const initials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'JD';
-  
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -52,7 +51,7 @@ export default function ProfileScreen(): React.JSX.Element {
       <ScrollView
         contentContainerStyle={{
           paddingTop: Math.max(insets.top, spacing.xl),
-          paddingBottom: TAB_BAR_HEIGHT + spacing['2xl'],
+          paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing['3xl'] + spacing.lg,
           paddingHorizontal: spacing.lg,
           gap: spacing.md,
         }}
@@ -67,14 +66,12 @@ export default function ProfileScreen(): React.JSX.Element {
             style={[StyleSheet.absoluteFillObject, { borderRadius: 24 }]}
           />
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{initials}</Text>
-            </View>
-            {user?.isEmailVerified && (
-              <View style={styles.verifiedBadge}>
-                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-              </View>
-            )}
+            <Avatar 
+              size="xl" 
+              name={user?.name || 'John Doe'} 
+              imageUrl={user?.profilePhotoUrl}
+              isVerified={(user as any)?.isVerified || user?.isEmailVerified}
+            />
           </View>
           <Text style={[styles.name, { color: colors.text.primary }]}>{user?.name || 'John Doe'}</Text>
           <Text style={[styles.college, { color: colors.text.secondary }]}>{user?.college || 'University'}</Text>

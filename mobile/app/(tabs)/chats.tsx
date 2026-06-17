@@ -42,7 +42,7 @@ export default function ChatsScreen(): React.JSX.Element {
               lastMessage={chat.lastMessage}
               time={new Date(chat.time).toLocaleDateString()}
               unreadCount={chat.unreadCount}
-              onPress={() => router.push(`/chat/${chat.rideId}/${chat.otherUser.id}`)}
+              onPress={() => router.push(`/chat/${chat.rideId}/${chat.otherUser.id}?name=${encodeURIComponent(chat.otherUser.name)}&rideInfo=${encodeURIComponent(chat.rideDetails.fromCity + ' to ' + chat.rideDetails.toCity)}`)}
             />
           ))}
 

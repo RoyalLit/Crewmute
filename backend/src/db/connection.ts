@@ -54,7 +54,7 @@ export async function disconnectDB(): Promise<void> {
 
 export function isDatabaseConnected(): boolean {
   // mongoose.connection.readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
-  return mongoose.connection.readyState === 1;
+  return mongoose.connection.readyState === mongoose.STATES.connected;
 }
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────

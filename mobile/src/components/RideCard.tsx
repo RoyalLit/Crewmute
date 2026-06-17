@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
-import { brandColors, spacing } from '../design/tokens';
+import { spacing, brandColors } from '../design/tokens';
+import { getDerivedRideStatus, formatDate } from '../utils/rideUtils';
 import { Avatar } from './Avatar';
 import { StatusChip } from './StatusChip';
 import { SeatsBadge } from './SeatsBadge';
@@ -67,7 +68,7 @@ export function RideCard({ ride, onPress }: RideCardProps) {
         <View style={styles.dateContainer}>
           <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
           <Text style={[styles.dateText, { color: colors.text.secondary }]}>
-            {ride.departureDate || ride.date}
+            {formatDate(ride.departureDate || ride.date)}
           </Text>
         </View>
         <StatusChip status={ride.status as any} />

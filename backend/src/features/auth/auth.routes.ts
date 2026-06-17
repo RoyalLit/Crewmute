@@ -8,18 +8,19 @@ import {
 } from './auth.validators';
 import validate from '../../middleware/validate';
 import { requireAuth } from '../../middleware/auth';
+import { asyncHandler } from '../../shared/asyncHandler';
 
 const router = Router();
 
 // Public routes
-router.post('/register', registerValidator, validate, authController.register);
-router.post('/verify-otp', verifyOtpValidator, validate, authController.verifyOTP);
-router.post('/resend-otp', resendOtpValidator, validate, authController.resendOTP);
-router.post('/login', loginValidator, validate, authController.login);
-router.post('/refresh', authController.refreshToken); // Payload is validated inline in controller
+router.post('/register', registerValidator, validate, asyncHandler(authController.register.bind(authController)));
+router.post('/verify-otp', verifyOtpValidator, validate, asyncHandler(authController.verifyOTP.bind(authController)));
+router.post('/resend-otp', resendOtpValidator, validate, asyncHandler(authController.resendOTP.bind(authController)));
+router.post('/login', loginValidator, validate, asyncHandler(authController.login.bind(authController)));
+router.post('/refresh', asyncHandler(authController.refreshToken.bind(authController))); // Payload is validated inline in controller
 
 // Protected routes
-router.get('/me', requireAuth, authController.getMe);
-router.post('/logout', requireAuth, authController.logoutGlobal);
+router.get('/me', requireAuth, asyncHandler(authController.getMe.bind(authController)));
+router.post('/logout', requireAuth, asyncHandler(authController.logoutGlobal.bind(authController)));
 
 export default router;

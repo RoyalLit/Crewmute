@@ -11,7 +11,7 @@ export const createRideValidator = [
   body('totalSeats').isInt({ min: 1, max: 7 }).withMessage('totalSeats must be between 1 and 7'),
   body('farePerSeat').isInt({ min: 0 }).withMessage('farePerSeat must be a non-negative number'),
   body('cabType')
-    .isIn(['Uber Go', 'Uber XL', 'Ola Mini', 'Ola Prime Sedan', 'Other'])
+    .isIn(['Hatchback', 'Sedan', 'SUV', 'MUV', 'Any', 'Other'])
     .withMessage('cabType must be a valid option'),
 ];
 
@@ -25,7 +25,7 @@ export const updateRideValidator = [
   body('farePerSeat').optional().isInt({ min: 0 }).withMessage('farePerSeat must be a non-negative number'),
   body('cabType')
     .optional()
-    .isIn(['Uber Go', 'Uber XL', 'Ola Mini', 'Ola Prime Sedan', 'Other'])
+    .isIn(['Hatchback', 'Sedan', 'SUV', 'MUV', 'Any', 'Other'])
     .withMessage('cabType must be a valid option'),
 ];
 

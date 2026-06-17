@@ -87,3 +87,18 @@ export function useWithdrawRequestMutation() {
     },
   });
 }
+
+export function useRemovePassengerMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiClient.post(`/requests/${requestId}/remove-passenger`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomingRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['rides'] });
+      queryClient.invalidateQueries({ queryKey: ['ride'] });
+    },
+  });
+}

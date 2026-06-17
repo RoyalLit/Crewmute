@@ -1,7 +1,9 @@
 import { requestsRepository } from './requests.repository';
 import { ridesRepository } from '../rides/rides.repository';
 import { usersService } from '../users/users.service';
+import { usersRepository } from '../users/users.repository';
 import { ridesService } from '../rides/rides.service';
+import { notificationsService } from '../notifications/notifications.service';
 import { CreateRequestDTO, RideRequestResponseDTO } from './requests.types';
 import { NotFoundError, ForbiddenError, AppError, ConflictError } from '../../shared/errors';
 
@@ -33,6 +35,17 @@ export class RequestsService {
 
     try {
       const request = await requestsRepository.createRequest(data.rideId, userId, ride.posterId.toString());
+      
+      // Notify poster
+      Promise.all([
+        usersRepository.findById(ride.posterId.toString()),
+        usersRepository.findById(userId)
+      ]).then(([poster, requester]) => {
+        if (poster?.expoPushToken && requester) {
+          notificationsService.notifyRequestReceived(poster.expoPushToken, requester.name, ride.toCity);
+        }
+      }).catch(err => console.error('Failed to send push notification', err));
+
       return this.formatRequest(request);
     } catch (error: any) {
       if (error.code === 11000) {
@@ -50,7 +63,9 @@ export class RequestsService {
         const formatted = this.formatRequest(req);
         try {
           formatted.ride = await ridesService.getRideDetails(formatted.rideId);
-        } catch (e) {}
+        } catch {
+          // ride details fetch is non-critical
+        }
         return formatted;
       })
     );
@@ -65,7 +80,9 @@ export class RequestsService {
         try {
           formatted.requester = await usersService.getPublicProfile(formatted.requesterId);
           formatted.ride = await ridesService.getRideDetails(formatted.rideId);
-        } catch (e) {}
+        } catch {
+          // requester/ride fetch is non-critical
+        }
         return formatted;
       })
     );
@@ -86,6 +103,17 @@ export class RequestsService {
     if (!updatedRide) throw new AppError('INTERNAL_ERROR', 'Failed to update ride seats', 500);
 
     const updatedRequest = await requestsRepository.updateStatus(id, 'accepted');
+
+    // Notify requester
+    Promise.all([
+      usersRepository.findById(request.requesterId.toString()),
+      usersRepository.findById(userId)
+    ]).then(([requester, poster]) => {
+      if (requester?.expoPushToken && poster) {
+        notificationsService.notifyRequestAccepted(requester.expoPushToken, poster.name, ride.toCity);
+      }
+    }).catch(err => console.error('Failed to send push notification', err));
+
     return this.formatRequest(updatedRequest);
   }
 
@@ -113,6 +141,25 @@ export class RequestsService {
     }
 
     const updatedRequest = await requestsRepository.updateStatus(id, 'withdrawn');
+    return this.formatRequest(updatedRequest);
+  }
+
+  async removePassenger(id: string, userId: string): Promise<RideRequestResponseDTO> {
+    const request = await requestsRepository.findById(id);
+    if (!request) throw new NotFoundError('RideRequest', id);
+    if (request.posterId.toString() !== userId) throw new ForbiddenError('remove a passenger from this ride');
+    
+    if (request.status === 'accepted') {
+      // Re-increment ride available seats
+      const ride = await ridesRepository.findById(request.rideId.toString());
+      if (ride) {
+        await ridesRepository.updateRide((ride as any)._id.toString(), { availableSeats: ride.availableSeats + 1 });
+      }
+    } else {
+      throw new ConflictError('Cannot remove a passenger whose request is not accepted');
+    }
+
+    const updatedRequest = await requestsRepository.updateStatus(id, 'rejected'); // or 'canceled', we use 'rejected'
     return this.formatRequest(updatedRequest);
   }
 }

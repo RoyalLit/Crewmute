@@ -53,9 +53,17 @@ export class UsersService {
   }
 
   async updateProfilePhoto(userId: string, photoUrl: string): Promise<UserResponseDTO> {
-    const updatedUser = await usersRepository.updateProfile(userId, { profilePhotoUrl: photoUrl });
+    const updatedUser = await usersRepository.updateProfile(userId, { profilePhotoUrl: photoUrl } as any);
     if (!updatedUser) {
       throw new AppError('INTERNAL_ERROR', 'Failed to update profile photo', 500);
+    }
+    return this.formatUser(updatedUser);
+  }
+
+  async updatePushToken(userId: string, pushToken: string): Promise<UserResponseDTO> {
+    const updatedUser = await usersRepository.updateProfile(userId, { expoPushToken: pushToken } as any);
+    if (!updatedUser) {
+      throw new AppError('INTERNAL_ERROR', 'Failed to update push token', 500);
     }
     return this.formatUser(updatedUser);
   }

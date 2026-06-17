@@ -29,7 +29,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    const newSocket = io(env.apiUrl, {
+    // Strip /api/v1 to connect to the root namespace
+    const socketUrl = env.apiUrl.replace(/\/api\/v1\/?$/, '');
+
+    const newSocket = io(socketUrl, {
       auth: {
         token: session.accessToken,
       },

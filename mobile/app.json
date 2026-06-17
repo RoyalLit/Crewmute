@@ -40,8 +40,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "61e9d2c7-69f0-46da-ac51-23f6564e5b94"
       }
-    }
+    },
+    "owner": "ft_pahul"
   }
 }

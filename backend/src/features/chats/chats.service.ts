@@ -103,7 +103,7 @@ export class ChatsService {
       receiverId: msg.receiverId.toString(),
       content: msg.content,
       readStatus: msg.readStatus,
-      createdAt: (msg.createdAt as Date).toISOString(),
+      createdAt: msg.createdAt.toISOString(),
     }));
   }
 }

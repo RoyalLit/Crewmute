@@ -63,3 +63,12 @@ export function useLogoutMutation() {
     },
   });
 }
+
+export function useUpdatePushTokenMutation() {
+  return useMutation({
+    mutationFn: async (data: { pushToken: string }) => {
+      const response = await apiClient.put('/users/push-token', data);
+      return response.data;
+    },
+  });
+}

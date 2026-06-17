@@ -3,16 +3,17 @@ import { ridesController } from './rides.controller';
 import { createRideValidator, updateRideValidator, rideFilterValidator } from './rides.validators';
 import validate from '../../middleware/validate';
 import { requireAuth } from '../../middleware/auth';
+import { asyncHandler } from '../../shared/asyncHandler';
 
 const router = Router();
 
 router.use(requireAuth); // All ride endpoints require authentication
 
-router.post('/', createRideValidator, validate, ridesController.createRide);
-router.get('/', rideFilterValidator, validate, ridesController.browseRides);
-router.get('/me', ridesController.getMyRides);
-router.get('/:id', ridesController.getRideDetails);
-router.patch('/:id', updateRideValidator, validate, ridesController.updateRide);
-router.delete('/:id', ridesController.cancelRide);
+router.post('/', createRideValidator, validate, asyncHandler(ridesController.createRide.bind(ridesController)));
+router.get('/', rideFilterValidator, validate, asyncHandler(ridesController.browseRides.bind(ridesController)));
+router.get('/me', asyncHandler(ridesController.getMyRides.bind(ridesController)));
+router.get('/:id', asyncHandler(ridesController.getRideDetails.bind(ridesController)));
+router.patch('/:id', updateRideValidator, validate, asyncHandler(ridesController.updateRide.bind(ridesController)));
+router.delete('/:id', asyncHandler(ridesController.cancelRide.bind(ridesController)));
 
 export default router;

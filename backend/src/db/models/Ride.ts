@@ -11,7 +11,7 @@ export interface IRide extends Document {
   totalSeats: number;
   availableSeats: number;
   farePerSeat: number;
-  cabType: 'Uber Go' | 'Uber XL' | 'Ola Mini' | 'Ola Prime Sedan' | 'Other';
+  cabType: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
   status: 'active' | 'cancelled' | 'expired';
   createdAt: Date;
   updatedAt: Date;
@@ -32,7 +32,7 @@ const rideSchema = new Schema<IRide>(
     cabType: {
       type: String,
       required: true,
-      enum: ['Uber Go', 'Uber XL', 'Ola Mini', 'Ola Prime Sedan', 'Other'],
+      enum: ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Any', 'Other'],
     },
     status: {
       type: String,

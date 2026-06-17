@@ -29,7 +29,7 @@ function validate(req: Request, res: Response, next: NextFunction): void {
     const details: Record<string, unknown> = {};
     for (const error of errors.array()) {
       if ('path' in error) {
-        details[error.path as string] = error.msg;
+        details[error.path] = error.msg;
       }
     }
 

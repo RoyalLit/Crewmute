@@ -38,6 +38,17 @@ const BADGE_MAP: Record<AvatarSize, number> = {
   xl: 24,
 };
 
+const AVATAR_GRADIENTS = [
+  ['#667EEA', '#764BA2'], // Purple-blue
+  ['#FF0844', '#FFB199'], // Red-orange
+  ['#43E97B', '#38F9D7'], // Green
+  ['#FA709A', '#FEE140'], // Pink-yellow
+  ['#F77062', '#FE5196'], // Pinkish
+  ['#4FACFE', '#00F2FE'], // Blue
+  ['#30CFD0', '#330867'], // Dark purple-teal
+  ['#F6D365', '#FDA085'], // Orange-yellow
+];
+
 export function Avatar({ size, name, imageUrl, isVerified = false }: AvatarProps) {
   const { isDark } = useTheme();
   const dimension = SIZE_MAP[size];
@@ -54,6 +65,17 @@ export function Avatar({ size, name, imageUrl, isVerified = false }: AvatarProps
 
   const borderColor = isDark ? '#2E2E4A' : '#E4E4F0';
 
+  const getGradientForName = (n: string) => {
+    let hash = 0;
+    for (let i = 0; i < n.length; i++) {
+      hash = n.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_GRADIENTS.length;
+    return AVATAR_GRADIENTS[index];
+  };
+
+  const gradientColors = getGradientForName(safeName);
+
   return (
     <View style={[styles.container, { width: dimension, height: dimension }]}>
       {imageUrl ? (
@@ -66,7 +88,7 @@ export function Avatar({ size, name, imageUrl, isVerified = false }: AvatarProps
         />
       ) : (
         <LinearGradient
-          colors={[brandColors.electricViolet, brandColors.coralPink]}
+          colors={gradientColors as [string, string]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[

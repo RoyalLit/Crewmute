@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable, ActivityIndicator, ImageBackground, Alert, ActionSheetIOS } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,19 +10,83 @@ import { spacing, brandColors } from '../../../src/design/tokens';
 import { useSocket } from '../../../src/context/SocketContext';
 import { useChatHistory, MessageResponseDTO } from '../../../src/api/chatsHooks';
 import { useAuth } from '../../../src/context/AuthContext';
+import { useRideDetailsQuery } from '../../../src/api/ridesHooks';
+import { useWithdrawRequestMutation, useRemovePassengerMutation, useIncomingRequestsQuery, useMyRequestsQuery } from '../../../src/api/requestsHooks';
+import { useBlockUserMutation, useCheckBlockQuery } from '../../../src/api/safetyHooks';
+import { getDerivedRideStatus } from '../../../src/utils/rideUtils';
+import { CustomActionSheet } from '../../../src/components/CustomActionSheet';
 
 export default function ChatScreen(): React.JSX.Element {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { rideId, otherUserId } = useLocalSearchParams<{ rideId: string; otherUserId: string }>();
+  const { rideId, otherUserId, name, rideInfo } = useLocalSearchParams<{ rideId: string; otherUserId: string; name?: string; rideInfo?: string }>();
   
   const { session } = useAuth();
   const { socket, isConnected } = useSocket();
   const queryClient = useQueryClient();
 
+  const flatListRef = useRef<any>(null);
   const [messageText, setMessageText] = useState('');
-  const flatListRef = useRef<FlatList>(null);
+  const { data: rideData } = useRideDetailsQuery(rideId as string);
+  const { data: incomingRequests } = useIncomingRequestsQuery();
+  const { data: myRequests } = useMyRequestsQuery();
+  const { data: blockData } = useCheckBlockQuery(otherUserId as string);
+
+  const isBlocked = blockData?.data?.isBlocked;
+
+  const removePassengerMutation = useRemovePassengerMutation();
+  const withdrawRequestMutation = useWithdrawRequestMutation();
+  const blockUserMutation = useBlockUserMutation();
+
+  const isPoster = session?.user?.id === rideData?.data?.posterId;
+
+  // Find request ID
+  const incomingReq = incomingRequests?.data?.find((req: any) => 
+    (req.rideId === rideId || req.ride?._id === rideId) && req.requester?._id === otherUserId
+  );
+  const myReq = myRequests?.data?.find((req: any) => 
+    req.rideId === rideId || req.ride?._id === rideId
+  );
+  const requestId = incomingReq?._id || incomingReq?.id || myReq?._id || myReq?.id;
+
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const derivedStatus = getDerivedRideStatus(rideData?.data);
+  const isRidePast = derivedStatus !== 'active';
+
+  const handleAction = (label: string) => {
+    if (label === 'Remove Passenger' || label === 'Withdraw Request') {
+      if (requestId) {
+        if (isPoster) {
+          removePassengerMutation.mutate(requestId);
+        } else {
+          withdrawRequestMutation.mutate(requestId);
+        }
+        router.back();
+      }
+    } else if (label === 'Block User') {
+      blockUserMutation.mutate({ userIdToBlock: otherUserId as string });
+      router.back();
+    } else if (label === 'Report') {
+      router.push(`/report/${otherUserId}`);
+    }
+  };
+
+  const actionLabels = isRidePast 
+    ? ['Block User', 'Report']
+    : isPoster 
+      ? ['Remove Passenger', 'Block User', 'Report']
+      : ['Withdraw Request', 'Block User', 'Report'];
+
+  const actionOptions = actionLabels.map(label => ({
+    label,
+    isDestructive: label === 'Remove Passenger' || label === 'Withdraw Request',
+    onPress: () => handleAction(label),
+  }));
+
+  const openActionSheet = () => {
+    setIsSheetOpen(true);
+  };
 
   const {
     data,
@@ -103,11 +167,19 @@ export default function ChatScreen(): React.JSX.Element {
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </Pressable>
         <View style={styles.headerTitleContainer}>
-          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Chat</Text>
+          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>{name || 'Chat'}</Text>
           {/* Banner text for context */}
-          <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>Ride Context Active</Text>
+          {rideInfo ? (
+            <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>{rideInfo}</Text>
+          ) : null}
         </View>
-        <View style={{ width: 24 }} />
+        <Pressable 
+          onPress={openActionSheet} 
+          style={styles.menuButton}
+          disabled={isSheetOpen}
+        >
+          <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
+        </Pressable>
       </View>
 
       {isLoading ? (
@@ -115,47 +187,70 @@ export default function ChatScreen(): React.JSX.Element {
           <ActivityIndicator size="large" color={brandColors.electricViolet} />
         </View>
       ) : (
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          inverted
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          onEndReached={() => {
-            if (hasNextPage) {
-              fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={brandColors.electricViolet} style={{ margin: spacing.md }} /> : null}
-        />
+        <ImageBackground
+          source={isDark ? require('../../../assets/images/chat_bg_dark.png') : require('../../../assets/images/chat_bg_light.png')}
+          style={styles.chatBackground}
+          imageStyle={styles.chatBackgroundImage}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            inverted
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            onEndReached={() => {
+              if (hasNextPage) {
+                fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={brandColors.electricViolet} style={{ margin: spacing.md }} /> : null}
+          />
+        </ImageBackground>
       )}
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 60 : 0}
       >
-        <View style={[styles.inputContainer, { backgroundColor: colors.background.primary, borderTopColor: colors.border.default, paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+        <View style={[styles.inputContainer, { 
+          backgroundColor: isDark ? colors.background.card : '#FFF',
+          borderTopColor: colors.border.default,
+          paddingBottom: Math.max(insets.bottom, spacing.md)
+        }]}>
           <TextInput
-            style={[styles.input, { backgroundColor: isDark ? colors.background.subtle : '#F2F3F5', color: colors.text.primary }]}
-            placeholder="Type a message..."
+            style={[styles.input, { 
+              color: colors.text.primary,
+              backgroundColor: isDark ? colors.background.primary : '#F0F2F5',
+              borderColor: colors.border.default
+            }]}
+            placeholder={isBlocked ? "Cannot send messages" : "Type a message..."}
             placeholderTextColor={colors.text.placeholder}
             value={messageText}
             onChangeText={setMessageText}
             multiline
             maxLength={500}
+            editable={!isBlocked}
           />
           <Pressable 
-            style={[styles.sendButton, !messageText.trim() && { opacity: 0.5 }]} 
+            style={[styles.sendButton, { 
+              backgroundColor: messageText.trim() && !isBlocked ? brandColors.electricViolet : colors.background.subtle 
+            }]}
             onPress={handleSend}
-            disabled={!messageText.trim() || !isConnected}
+            disabled={!messageText.trim() || isBlocked}
           >
-            <Ionicons name="send" size={20} color="#FFF" />
+            <Ionicons name="send" size={18} color={messageText.trim() && !isBlocked ? '#FFF' : colors.text.placeholder} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      <CustomActionSheet
+        visible={isSheetOpen}
+        onClose={() => setIsSheetOpen(false)}
+        options={actionOptions}
+      />
     </View>
   );
 }
@@ -176,7 +271,11 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   headerTitleContainer: {
+    flex: 1,
     alignItems: 'center',
+  },
+  menuButton: {
+    padding: spacing.xs,
   },
   headerTitle: {
     fontFamily: 'PlusJakartaSans-700Bold',
@@ -194,6 +293,13 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg,
+  },
+  chatBackground: {
+    flex: 1,
+  },
+  chatBackgroundImage: {
+    opacity: 1, // Adjusted for subtlety, tweak if necessary
+    resizeMode: 'cover',
   },
   messageWrapper: {
     flexDirection: 'row',

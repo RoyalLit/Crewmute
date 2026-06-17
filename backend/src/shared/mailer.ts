@@ -44,8 +44,9 @@ class MailerService {
         `,
       });
       logger.info(`OTP email successfully sent to ${to}`);
-    } catch (error: any) {
-      logger.error(`Failed to send OTP email to ${to}: ${error.message || String(error)}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to send OTP email to ${to}: ${errorMessage}`);
       if (env.nodeEnv === 'development') {
         logger.warn(`[DEV MODE] Bypassing email failure. The OTP for ${to} is: ${otpCode}`);
         return;

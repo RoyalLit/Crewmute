@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { brandColors, spacing } from '../design/tokens';
 import { Avatar } from './Avatar';
@@ -12,6 +14,7 @@ interface IncomingRequestItemProps {
 
 export function IncomingRequestItem({ request }: IncomingRequestItemProps) {
   const { colors, isDark } = useTheme();
+  const router = useRouter();
   
   const acceptMutation = useAcceptRequestMutation();
   const rejectMutation = useRejectRequestMutation();
@@ -80,8 +83,18 @@ export function IncomingRequestItem({ request }: IncomingRequestItemProps) {
       )}
 
       {request.status === 'accepted' && (
-        <View style={[styles.actions, { justifyContent: 'center', backgroundColor: brandColors.mintGreen, paddingVertical: 8, borderRadius: 8 }]}>
-          <Text style={[styles.btnText, { color: '#FFF' }]}>Seat Confirmed ✓</Text>
+        <View style={styles.actions}>
+          <Pressable 
+            style={[styles.btn, { backgroundColor: brandColors.mintGreen, flexDirection: 'row' }]}
+            onPress={() => {
+              const rId = request.rideId?._id || request.rideId?.id || request.rideId || request.ride?._id || request.ride?.id;
+              const rInfo = request.rideId?.fromCity ? `${request.rideId.fromCity} to ${request.rideId.toCity}` : '';
+              router.push(`/chat/${rId}/${request.requester.id || request.requester._id}?name=${encodeURIComponent(request.requester.name)}&rideInfo=${encodeURIComponent(rInfo)}`);
+            }}
+          >
+            <Ionicons name="chatbubbles" size={16} color="#FFF" style={{ marginRight: 6 }} />
+            <Text style={[styles.btnText, { color: '#FFF' }]}>Message</Text>
+          </Pressable>
         </View>
       )}
     </View>

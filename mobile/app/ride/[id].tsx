@@ -10,10 +10,12 @@ import { useAuthStore } from '../../src/store/authStore';
 import { Avatar } from '../../src/components/Avatar';
 import { SeatsBadge } from '../../src/components/SeatsBadge';
 import { StatusChip } from '../../src/components/StatusChip';
+import { RideMap } from '../../src/components/RideMap';
 
 import { useRideDetailsQuery, useCancelRideMutation } from '../../src/api/ridesHooks';
 import { useCreateRequestMutation, useWithdrawRequestMutation, useMyRequestsQuery, useIncomingRequestsQuery } from '../../src/api/requestsHooks';
 import { IncomingRequestItem } from '../../src/components/IncomingRequestItem';
+import { getDerivedRideStatus, formatDate } from '../../src/utils/rideUtils';
 
 export default function RideDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,6 +59,8 @@ export default function RideDetailScreen() {
   const ride = rideData.data;
   const isPoster = ride.posterId === currentUser?.id || ride.poster?.id === currentUser?.id;
   
+  const derivedStatus = getDerivedRideStatus(ride);
+
   // Find if current user has a pending or accepted request for this ride
   const myRequests = Array.isArray(myRequestsData?.data) ? myRequestsData.data : [];
   const existingRequest = myRequests.find((req: any) => 
@@ -134,9 +138,9 @@ export default function RideDetailScreen() {
           <View style={styles.topHeaderRow}>
             <View style={styles.dateContainer}>
               <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
-              <Text style={[styles.dateText, { color: colors.text.secondary }]}>{ride.departureDate}</Text>
+              <Text style={[styles.dateText, { color: colors.text.secondary }]}>{formatDate(ride.departureDate)}</Text>
             </View>
-            <StatusChip status={ride.status} />
+            <StatusChip status={derivedStatus} />
           </View>
 
           <View style={styles.routeContainer}>
@@ -223,6 +227,10 @@ export default function RideDetailScreen() {
           </View>
         </View>
 
+        {/* Route Map */}
+        <Text style={[styles.sectionTitle, { color: colors.text.primary, marginTop: spacing.xl }]}>Route</Text>
+        <RideMap fromCity={ride.fromCity} toCity={ride.toCity} />
+
         {/* Incoming Requests for Poster */}
         {isPoster && rideIncomingRequests.length > 0 && (
           <View style={{ marginTop: spacing.xl }}>
@@ -237,7 +245,7 @@ export default function RideDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom CTA */}
-      {ride.status === 'active' && (
+      {derivedStatus === 'active' && (
         <View style={[styles.bottomCta, { backgroundColor: colors.background.primary, borderTopColor: colors.border.default }]}>
           {isPoster ? (
             <Pressable 
@@ -253,10 +261,13 @@ export default function RideDetailScreen() {
             </Pressable>
           ) : existingRequest ? (
             existingRequest.status === 'accepted' ? (
-              <View style={[styles.btn, { backgroundColor: brandColors.mintGreen }]}>
-                <Ionicons name="checkmark-circle" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                <Text style={styles.btnTextWhite}>Seat Confirmed</Text>
-              </View>
+              <Pressable 
+                style={[styles.btn, { backgroundColor: brandColors.mintGreen }]}
+                onPress={() => router.push(`/chat/${ride.id}/${ride.poster.id}?name=${encodeURIComponent(ride.poster.name)}&rideInfo=${encodeURIComponent(ride.fromCity + ' to ' + ride.toCity)}`)}
+              >
+                <Ionicons name="chatbubbles" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                <Text style={styles.btnTextWhite}>Message Poster</Text>
+              </Pressable>
             ) : (
               <Pressable 
                 style={[styles.btn, { backgroundColor: colors.background.subtle, borderWidth: 1, borderColor: colors.border.default }]}

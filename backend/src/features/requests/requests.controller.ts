@@ -56,6 +56,15 @@ export class RequestsController {
       next(error);
     }
   }
+
+  async removePassenger(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const request = await requestsService.removePassenger(req.params.id, req.user!.userId);
+      res.status(200).json(successResponse(request));
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const requestsController = new RequestsController();

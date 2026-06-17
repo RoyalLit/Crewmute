@@ -17,6 +17,7 @@ export interface IUser extends Document {
   
   tokenVersion: number;
   expoPushToken?: string;
+  blockedUsers?: string[];
   
   createdAt: Date;
   updatedAt: Date;
@@ -74,7 +75,11 @@ const UserSchema = new Schema<IUser>(
       type: Number,
       required: true,
       default: 0
-    }
+    },
+    blockedUsers: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    }]
   },
   { 
     timestamps: true 

@@ -22,16 +22,19 @@ import { isDatabaseConnected } from '../db/connection';
 import authRoutes from '../features/auth/auth.routes';
 import usersRoutes from '../features/users/users.routes';
 import ridesRoutes from '../features/rides/rides.routes';
-import requestsRoutes from '../features/requests/requests.routes';
+import { requestsRoutes } from '../features/requests/requests.routes';
 import chatsRoutes from '../features/chats/chats.routes';
+import { safetyRoutes } from '../features/safety/safety.routes';
 
 const router = Router();
 
+// Mount feature routes
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
 router.use('/rides', ridesRoutes);
 router.use('/requests', requestsRoutes);
 router.use('/chats', chatsRoutes);
+router.use('/safety', safetyRoutes);
 
 // ── Liveness probe ────────────────────────────────────────────────────────────
 // Returns 200 as long as the Node.js process is running.

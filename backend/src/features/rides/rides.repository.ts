@@ -25,6 +25,28 @@ export class RidesRepository {
 
     const filter: FilterQuery<IRide> = { status: 'active', availableSeats: { $gt: 0 } };
 
+    // Calculate IST threshold (current time - 10 minutes)
+    const threshold = new Date(Date.now() - 10 * 60 * 1000);
+    const istTime = new Date(threshold.getTime() + 5.5 * 60 * 60 * 1000);
+    const thresholdDateStr = istTime.toISOString().split('T')[0];
+    const thresholdTimeStr = istTime.toISOString().split('T')[1].slice(0, 5);
+
+    if (date) {
+      filter.departureDate = date;
+      // If searching for today, also filter by time
+      if (date === thresholdDateStr) {
+        filter.departureTime = { $gte: thresholdTimeStr };
+      }
+    } else {
+      filter.$or = [
+        { departureDate: { $gt: thresholdDateStr } },
+        { 
+          departureDate: thresholdDateStr,
+          departureTime: { $gte: thresholdTimeStr }
+        }
+      ];
+    }
+
     if (query.excludePosterId) {
       filter.posterId = { $ne: query.excludePosterId };
     }
@@ -38,9 +60,7 @@ export class RidesRepository {
         { stops: new RegExp(`^${toCity}$`, 'i') }
       ];
     }
-    if (date) {
-      filter.departureDate = date;
-    }
+    // date logic is handled above
 
     const [data, total] = await Promise.all([
       RideModel.find(filter).sort({ departureDate: 1, departureTime: 1 }).skip(skip).limit(pageSize).lean(),

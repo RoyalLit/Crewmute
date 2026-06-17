@@ -10,7 +10,7 @@ export interface CreateRideRequestDTO {
   stops?: string[];
   totalSeats: number;
   farePerSeat: number;
-  cabType: 'Uber Go' | 'Uber XL' | 'Ola Mini' | 'Ola Prime Sedan' | 'Other';
+  cabType: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
 }
 
 export interface UpdateRideRequestDTO {
@@ -20,7 +20,7 @@ export interface UpdateRideRequestDTO {
   stops?: string[];
   totalSeats?: number;
   farePerSeat?: number;
-  cabType?: 'Uber Go' | 'Uber XL' | 'Ola Mini' | 'Ola Prime Sedan' | 'Other';
+  cabType?: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
 }
 
 export interface RideFilterQuery extends PaginationQuery {

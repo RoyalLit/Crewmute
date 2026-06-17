@@ -13,11 +13,11 @@
  */
 import { JwtPayload } from '../features/auth/auth.types';
 
-declare global {
-  namespace Express {
-    export interface Request {
-      user?: JwtPayload;
-    }
+import 'express';
+
+declare module 'express' {
+  interface Request {
+    user?: JwtPayload;
   }
 }
 

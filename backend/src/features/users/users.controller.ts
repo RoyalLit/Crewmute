@@ -47,6 +47,16 @@ export class UsersController {
       next(error);
     }
   }
+
+  async updatePushToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { pushToken } = req.body;
+      const user = await usersService.updatePushToken(req.user!.userId, pushToken);
+      res.status(200).json(successResponse(user));
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const usersController = new UsersController();

@@ -3,23 +3,35 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { spacing, brandColors } from '../design/tokens';
+import { getDerivedRideStatus, formatDate } from '../utils/rideUtils';
+import { Avatar } from './Avatar';
 
 interface TicketRideCardProps {
   ride: any; // Using any for now to handle backend RideResponseDTO
   requestStatus?: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
 }
-
 export function TicketRideCard({ ride, requestStatus }: TicketRideCardProps) {
   const { colors, isDark } = useTheme();
 
+  const derivedStatus = getDerivedRideStatus(ride);
   const getStatusColor = () => {
-    if (requestStatus === 'accepted') return brandColors.mintGreen;
+    if (requestStatus === 'accepted') {
+      return derivedStatus === 'completed' || derivedStatus === 'expired' || derivedStatus === 'cancelled' 
+        ? brandColors.electricViolet : brandColors.mintGreen;
+    }
     if (requestStatus === 'pending') return '#F59E0B'; // Amber
     if (requestStatus === 'rejected') return brandColors.coralPink;
     
-    if (ride.status === 'active') return brandColors.mintGreen;
-    if (ride.status === 'completed') return brandColors.electricViolet;
+    if (derivedStatus === 'active') return brandColors.mintGreen;
+    if (derivedStatus === 'completed') return brandColors.electricViolet;
     return brandColors.coralPink; // cancelled or expired
+  };
+
+  const getStatusText = () => {
+    if (requestStatus && requestStatus !== 'accepted') return requestStatus.toUpperCase();
+    if (derivedStatus === 'cancelled') return 'CANCELLED';
+    if (derivedStatus === 'completed' || derivedStatus === 'expired') return 'COMPLETED';
+    return requestStatus ? requestStatus.toUpperCase() : 'ACTIVE';
   };
 
   const statusColor = getStatusColor();
@@ -33,11 +45,11 @@ export function TicketRideCard({ ride, requestStatus }: TicketRideCardProps) {
       <View style={[styles.ticketTop, { backgroundColor: colors.background.card, borderColor }]}>
         <View style={styles.headerRow}>
           <Text style={[styles.dateText, { color: colors.text.secondary }]}>
-            {ride.departureDate || ride.date} • {ride.departureTime || ride.time} {ride.arrivalTime ? `- ${ride.arrivalTime}` : ''}
+            {formatDate(ride.departureDate || ride.date)} • {ride.departureTime || ride.time} {ride.arrivalTime ? `- ${ride.arrivalTime}` : ''}
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
             <Text style={[styles.statusText, { color: statusColor }]}>
-              {requestStatus ? requestStatus.toUpperCase() : (ride.status || 'ACTIVE').toUpperCase()}
+              {getStatusText()}
             </Text>
           </View>
         </View>
@@ -87,9 +99,12 @@ export function TicketRideCard({ ride, requestStatus }: TicketRideCardProps) {
       {/* Bottom Ticket Portion (Dual Tone) */}
       <View style={[styles.ticketBottom, { backgroundColor: dualToneBg, borderColor }]}>
         <View style={styles.driverInfo}>
-          <View style={[styles.driverAvatar, { backgroundColor: statusColor }]}>
-            <Ionicons name="person" size={16} color="#FFFFFF" />
-          </View>
+          <Avatar 
+            size="sm" 
+            name={ride.poster ? ride.poster.name : (ride.posterName || ride.driver || 'Driver')} 
+            imageUrl={ride.poster?.profilePhotoUrl || ride.posterProfilePhotoUrl}
+            isVerified={ride.poster?.isVerified || ride.poster?.isEmailVerified}
+          />
           <Text style={[styles.driverName, { color: colors.text.primary }]}>
             {ride.poster ? ride.poster.name : (ride.posterName || ride.driver || 'Driver')}
           </Text>

@@ -10,6 +10,7 @@ import { TicketRideCard } from '../../src/components/TicketRideCard';
 import { IncomingRequestItem } from '../../src/components/IncomingRequestItem';
 import { useMyRidesQuery, useCancelRideMutation } from '../../src/api/ridesHooks';
 import { useMyRequestsQuery, useIncomingRequestsQuery } from '../../src/api/requestsHooks';
+import { getDerivedRideStatus } from '../../src/utils/rideUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -61,10 +62,18 @@ export default function RidesScreen(): React.JSX.Element {
     };
   });
 
-  const drivingRides = allRides.filter((r: any) => r.status === 'active');
+  // Check if a ride is past its departure time + 10 mins buffer
+  const isRidePast = (r: any) => {
+    const derivedStatus = getDerivedRideStatus(r);
+    if (derivedStatus !== 'active') return true;
+    if (r._requestStatus === 'rejected' || r._requestStatus === 'withdrawn') return true;
+    return false;
+  };
+
+  const drivingRides = allRides.filter((r: any) => getDerivedRideStatus(r) === 'active');
   
   const ridingRides = requestedRides.filter((r: any) => 
-    r.status === 'active' && 
+    getDerivedRideStatus(r) === 'active' && 
     r._requestStatus !== 'rejected' && 
     r._requestStatus !== 'withdrawn'
   );
@@ -72,13 +81,7 @@ export default function RidesScreen(): React.JSX.Element {
   const combinedRides = [...allRides, ...requestedRides];
   const uniqueRides = Array.from(new Map(combinedRides.map(r => [r._id || r.id, r])).values());
   
-  const pastRides = uniqueRides.filter((r: any) => 
-    r.status === 'cancelled' || 
-    r.status === 'completed' || 
-    r.status === 'expired' || 
-    r._requestStatus === 'rejected' ||
-    r._requestStatus === 'withdrawn'
-  );
+  const pastRides = uniqueRides.filter((r: any) => isRidePast(r));
 
   const displayRides = activeTab === 'riding' ? ridingRides : activeTab === 'driving' ? drivingRides : pastRides;
   const isScreenLoading = isLoading || reqLoading;

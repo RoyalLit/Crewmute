@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { brandColors } from '../design/tokens';
 
-export type RideStatus = 'Active' | 'Pending' | 'Accepted' | 'Rejected' | 'Full' | 'Expired' | 'Cancelled';
+export type RideStatus = 'Active' | 'Pending' | 'Accepted' | 'Rejected' | 'Full' | 'Expired' | 'Cancelled' | 'active' | 'completed' | 'cancelled' | 'expired';
 
 function hexToRGBA(hex: string, alpha: number) {
   if (!hex || hex.length < 7) return 'rgba(0,0,0,0.1)';
@@ -17,9 +17,10 @@ interface StatusChipProps {
 }
 
 export function StatusChip({ status }: StatusChipProps) {
+  const displayStatus = status.charAt(0).toUpperCase() + status.slice(1) as RideStatus;
   let textColor = '';
 
-  switch (status) {
+  switch (displayStatus) {
     case 'Active':
     case 'Accepted':
       textColor = brandColors.mintGreen;
@@ -44,7 +45,7 @@ export function StatusChip({ status }: StatusChipProps) {
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
-      <Text style={[styles.text, { color: textColor }]}>{status}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{displayStatus}</Text>
     </View>
   );
 }

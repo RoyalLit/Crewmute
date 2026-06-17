@@ -8,9 +8,9 @@ class NotificationsService {
     this.expo = new Expo();
   }
 
-  async sendPushNotification(pushToken: string, title: string, body: string, data?: any): Promise<void> {
+  async sendPushNotification(pushToken: string, title: string, body: string, data?: Record<string, unknown>): Promise<void> {
     if (!Expo.isExpoPushToken(pushToken)) {
-      logger.warn(`Push token ${pushToken} is not a valid Expo push token`);
+      logger.warn(`Push token ${String(pushToken)} is not a valid Expo push token`);
       return;
     }
 
@@ -29,7 +29,7 @@ class NotificationsService {
         logger.info(`Push notification sent: ${JSON.stringify(ticketChunk)}`);
       }
     } catch (error) {
-      logger.error(`Error sending push notification: ${error}`);
+      logger.error(`Error sending push notification: ${String(error)}`);
     }
   }
 

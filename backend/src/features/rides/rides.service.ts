@@ -56,7 +56,9 @@ export class RidesService {
       const formattedRide = this.formatRide(ride);
       try {
         formattedRide.poster = await usersService.getPublicProfile(formattedRide.posterId);
-      } catch (error) {}
+      } catch {
+        // poster profile fetch is non-critical
+      }
       return formattedRide;
     }));
     
@@ -72,7 +74,9 @@ export class RidesService {
       const formattedRide = this.formatRide(ride);
       try {
         formattedRide.poster = await usersService.getPublicProfile(formattedRide.posterId);
-      } catch (error) {}
+      } catch {
+        // poster profile fetch is non-critical
+      }
       return formattedRide;
     }));
   }

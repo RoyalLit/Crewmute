@@ -17,7 +17,7 @@ These rules are not suggestions. They are enforced standards. Any change that vi
 
 ## 1. MISSION
 
-Crewmute is a production system. This repository exists to ship a correct, reliable, and maintainable product. Correctness and reliability are non-negotiable. Speed is a result of discipline, not a replacement for it.
+Crewmute is a full-scale, production-ready system. We are NOT focused on building an MVP; we are building the complete main product. This repository exists to ship a correct, reliable, and maintainable product with robust features. Correctness, security, and scalability are non-negotiable. Speed is a result of discipline, not a replacement for it. Shortcuts or "MVP hacks" are strictly forbidden.
 
 ### 1.1 Purpose of This Repository
 

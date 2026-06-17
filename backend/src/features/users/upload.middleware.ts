@@ -13,7 +13,7 @@ cloudinary.config({
 // Configure Multer Storage for Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (_req, file) => {
+  params: (_req, file) => {
     return {
       folder: 'crewmute_profiles',
       allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
