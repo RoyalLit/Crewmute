@@ -68,7 +68,7 @@ export function CustomActionSheet({ visible, onClose, options, title }: CustomAc
   if (Platform.OS === 'ios') return null;
 
   // On Android, we render a custom premium bottom sheet
-  if (!visible && Platform.OS !== 'ios') return null;
+  if (!visible) return null;
 
   return (
     <Modal

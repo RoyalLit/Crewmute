@@ -1,9 +1,10 @@
 import React, { useCallback, useMemo, forwardRef, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator } from 'react-native';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { spacing, brandColors } from '../design/tokens';
+import { Alert } from './GlobalAlert';
 import { useCreateRideMutation } from '../api/ridesHooks';
 import { CityAutocomplete } from './CityAutocomplete';
 
@@ -72,6 +73,13 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
         if (!/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(arrivalTime)) {
            Alert.alert('Invalid Arrival Time', 'Arrival Time must be in 24-hour HH:mm format (e.g. 18:30)');
            return;
+        }
+        
+        // Ensure departure time is not in the past
+        const selectedDateTime = new Date(`${date}T${time}:00`);
+        if (selectedDateTime.getTime() < Date.now()) {
+          Alert.alert('Invalid Time', 'Departure time cannot be in the past.');
+          return;
         }
       }
       if (step === 3) {

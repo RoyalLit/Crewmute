@@ -5,8 +5,8 @@ import mobileEnv from '../config/env';
 
 // Use env var if available, otherwise fallback to localhost for simulator / 10.0.2.2 for emulator
 const API_URL = mobileEnv.apiUrl || (Platform.OS === 'android' 
-  ? 'http://10.0.2.2:5000/api/v1' 
-  : 'http://localhost:5000/api/v1');
+  ? 'http://10.0.2.2:5001/api/v1' 
+  : 'http://localhost:5001/api/v1');
 
 export const apiClient = axios.create({
   baseURL: API_URL,

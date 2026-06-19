@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from '
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { spacing, brandColors } from '../design/tokens';
-import { getDerivedRideStatus, formatDate } from '../utils/rideUtils';
+import { formatDate } from '../utils/rideUtils';
 import { Avatar } from './Avatar';
 import { StatusChip } from './StatusChip';
 import { SeatsBadge } from './SeatsBadge';

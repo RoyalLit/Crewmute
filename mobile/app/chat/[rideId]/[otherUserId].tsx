@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable, ActivityIndicator, ImageBackground, Alert, ActionSheetIOS } from 'react-native';
+import { StyleSheet, Text, View, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable, ActivityIndicator, ImageBackground } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';

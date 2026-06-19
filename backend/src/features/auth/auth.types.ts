@@ -24,6 +24,12 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface ResetPasswordRequestDTO {
+  email: string;
+  otp: string;
+  newPassword?: string;
+}
+
 export interface UserResponseDTO {
   id: string;
   name: string;

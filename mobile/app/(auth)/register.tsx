@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/design/theme';
@@ -25,11 +25,18 @@ export default function RegisterScreen() {
   const registerMutation = useRegisterMutation();
   const loading = registerMutation.isPending;
 
+  const isFormValid = !!(form.name && form.email && form.college && form.password.length >= 8 && /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) && /[0-9]/.test(form.password));
+
   const handleRegister = async () => {
     setError('');
     
     if (!form.name || !form.email || !form.college || !form.password) {
       setError('Please fill in all fields');
+      return;
+    }
+    
+    if (!isFormValid) {
+      setError('Please ensure your password meets all constraints');
       return;
     }
 
@@ -44,8 +51,12 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background.primary }]}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          <View style={styles.header}>
           <Pressable 
             onPress={() => {
               if (router.canGoBack()) {
@@ -122,12 +133,52 @@ export default function RegisterScreen() {
             </View>
           </View>
 
+          {/* Password constraints checklist */}
+          <View style={{ marginTop: 4, paddingHorizontal: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              {form.password.length >= 8 ? (
+                <Ionicons name="checkmark" size={16} color={brandColors.mintGreen} />
+              ) : (
+                <View style={{ width: 16, alignItems: 'center' }}>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB' }} />
+                </View>
+              )}
+              <Text style={{ marginLeft: 8, fontFamily: 'PlusJakartaSans-Medium', fontSize: 13, color: form.password.length >= 8 ? brandColors.mintGreen : colors.text.placeholder }}>
+                At least 8 characters
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              {/[A-Z]/.test(form.password) && /[a-z]/.test(form.password) ? (
+                <Ionicons name="checkmark" size={16} color={brandColors.mintGreen} />
+              ) : (
+                <View style={{ width: 16, alignItems: 'center' }}>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB' }} />
+                </View>
+              )}
+              <Text style={{ marginLeft: 8, fontFamily: 'PlusJakartaSans-Medium', fontSize: 13, color: /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) ? brandColors.mintGreen : colors.text.placeholder }}>
+                Uppercase and lowercase letters
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/[0-9]/.test(form.password) ? (
+                <Ionicons name="checkmark" size={16} color={brandColors.mintGreen} />
+              ) : (
+                <View style={{ width: 16, alignItems: 'center' }}>
+                  <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#D1D5DB' }} />
+                </View>
+              )}
+              <Text style={{ marginLeft: 8, fontFamily: 'PlusJakartaSans-Medium', fontSize: 13, color: /[0-9]/.test(form.password) ? brandColors.mintGreen : colors.text.placeholder }}>
+                At least one number
+              </Text>
+            </View>
+          </View>
+
           {error ? <Text style={[styles.errorText, { color: brandColors.coralPink }]}>{error}</Text> : null}
 
           <Pressable 
-            style={[styles.button, { backgroundColor: colors.interactive.primary, opacity: loading ? 0.7 : 1 }]}
+            style={[styles.button, { backgroundColor: colors.interactive.primary, opacity: (!isFormValid || loading) ? 0.7 : 1 }]}
             onPress={handleRegister}
-            disabled={loading}
+            disabled={!isFormValid || loading}
           >
             {loading ? (
               <ActivityIndicator color={colors.interactive.primaryText} />
@@ -137,6 +188,7 @@ export default function RegisterScreen() {
           </Pressable>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

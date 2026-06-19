@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/design/theme';
 import { spacing, TAB_BAR_HEIGHT } from '../../src/design/tokens';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { CityAutocomplete } from '../../src/components/CityAutocomplete';
 import { useCreateRideMutation } from '../../src/api/ridesHooks';
 import { useRouter } from 'expo-router';
+import { Alert } from '../../src/components/GlobalAlert';
 
 export default function PostScreen(): React.JSX.Element {
   const { colors, isDark } = useTheme();

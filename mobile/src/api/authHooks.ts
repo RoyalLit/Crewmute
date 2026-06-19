@@ -72,3 +72,21 @@ export function useUpdatePushTokenMutation() {
     },
   });
 }
+
+export function useForgotPasswordMutation() {
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/auth/forgot-password', data);
+      return response.data;
+    },
+  });
+}
+
+export function useResetPasswordMutation() {
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/auth/reset-password', data);
+      return response.data;
+    },
+  });
+}

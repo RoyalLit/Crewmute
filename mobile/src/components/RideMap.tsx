@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
+import { View, StyleSheet, ActivityIndicator, Text, Platform } from 'react-native';
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
 import { useTheme } from '../design/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -76,15 +76,46 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
     }
   }, [fromCity, toCity]);
 
-  // Fit map to route when coords are ready
+  const [animatedCoords, setAnimatedCoords] = useState<Coordinate[]>([]);
+
+  // Fit map to route when coords are ready and start animation
   useEffect(() => {
     if (mapRef.current && routeCoords.length > 0) {
+      // Delay the map fitting slightly to ensure map is fully mounted
       setTimeout(() => {
         mapRef.current?.fitToCoordinates(routeCoords, {
           edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
           animated: true,
         });
-      }, 500); // Slight delay to ensure map is mounted
+      }, 500);
+
+      let intervalId: NodeJS.Timeout;
+
+      // Wait for the map fitting animation (~1000ms) to complete before drawing the line
+      const animationDelayId = setTimeout(() => {
+        setAnimatedCoords([]);
+        let currentIndex = 0;
+        const totalPoints = routeCoords.length;
+        const durationMs = 1500; // 1.5 seconds animation
+        const intervalMs = 30; // ~33 fps
+        const totalSteps = durationMs / intervalMs;
+        const pointsPerStep = Math.max(1, Math.ceil(totalPoints / totalSteps));
+
+        intervalId = setInterval(() => {
+          currentIndex += pointsPerStep;
+          if (currentIndex >= totalPoints) {
+            setAnimatedCoords([...routeCoords]);
+            clearInterval(intervalId);
+          } else {
+            setAnimatedCoords(routeCoords.slice(0, currentIndex));
+          }
+        }, intervalMs);
+      }, 1500); // 500ms initial + 1000ms map zoom
+
+      return () => {
+        clearTimeout(animationDelayId);
+        if (intervalId) clearInterval(intervalId);
+      };
     } else if (mapRef.current && fromCoord && toCoord) {
       setTimeout(() => {
         mapRef.current?.fitToCoordinates([fromCoord, toCoord], {
@@ -93,6 +124,8 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
         });
       }, 500);
     }
+    
+    return undefined;
   }, [routeCoords, fromCoord, toCoord]);
 
   if (loading) {
@@ -118,6 +151,7 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
         ref={mapRef}
         style={StyleSheet.absoluteFillObject}
         provider={PROVIDER_DEFAULT}
+        mapType={Platform.OS === 'android' ? 'none' : 'standard'}
         userInterfaceStyle={isDark ? 'dark' : 'light'}
         initialRegion={{
           latitude: fromCoord.latitude,
@@ -128,6 +162,13 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
         pitchEnabled={false}
         showsCompass={false}
       >
+        {Platform.OS === 'android' && (
+          <UrlTile
+            urlTemplate="https://a.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maximumZ={19}
+            flipY={false}
+          />
+        )}
         <Marker coordinate={fromCoord} title={fromCity}>
           <View style={[styles.markerContainer, { backgroundColor: colors.interactive.primary }]}>
             <Ionicons name="location" size={16} color="#FFF" />
@@ -140,9 +181,21 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
           </View>
         </Marker>
 
-        {routeCoords.length > 0 && (
+        {/* Base faint polyline (full route) */}
+        {routeCoords.length > 1 && (
           <Polyline
             coordinates={routeCoords}
+            strokeColor={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}
+            strokeWidth={4}
+            lineJoin="round"
+            lineCap="round"
+          />
+        )}
+
+        {/* Animated colored polyline */}
+        {animatedCoords.length > 1 && (
+          <Polyline
+            coordinates={animatedCoords}
             strokeColor={colors.interactive.primary}
             strokeWidth={4}
             lineJoin="round"

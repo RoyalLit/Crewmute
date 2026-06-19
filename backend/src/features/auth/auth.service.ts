@@ -125,6 +125,71 @@ export class AuthService {
   }
 
   /**
+   * Initiates the forgot password flow by sending an OTP to the user's email.
+   */
+  async forgotPassword(data: ResendOTPRequestDTO): Promise<{ message: string }> {
+    const user = await authRepository.findByEmail(data.email);
+
+    // We still return success even if user doesn't exist to prevent email enumeration
+    if (!user) {
+      return { message: 'If an account exists with this email, an OTP has been sent.' };
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    await authRepository.updateUser((user as any)._id.toString(), {
+      otpCode,
+      otpExpiresAt,
+    });
+
+    mailerService.sendOTP(user.email, otpCode).catch((e) => {
+      logger.error(`Background OTP forgot-password failed: ${e.message}`);
+    });
+
+    if (env.nodeEnv === 'development') {
+      logger.info(`Forgot Password OTP for ${user.email} is ${otpCode}`);
+    }
+
+    return { message: 'If an account exists with this email, an OTP has been sent.' };
+  }
+
+  /**
+   * Verifies the OTP and resets the user's password.
+   */
+  async resetPassword(data: import('./auth.types').ResetPasswordRequestDTO): Promise<{ message: string }> {
+    const user = await authRepository.findByEmail(data.email);
+    
+    if (!user) {
+      throw new UnauthorizedError('Invalid email or OTP.');
+    }
+
+    const isMagicOtp = env.nodeEnv === 'development' && data.otp === '123456';
+
+    if (!isMagicOtp && (user.otpCode !== data.otp || !user.otpExpiresAt || user.otpExpiresAt < new Date())) {
+      throw new UnauthorizedError('Invalid or expired OTP.');
+    }
+
+    if (!data.newPassword) {
+      throw new AppError('BAD_REQUEST', 'New password is required', 400);
+    }
+
+    const hashedPassword = await bcrypt.hash(data.newPassword, 12);
+
+    // Update password, clear OTP, and increment token version to log out all devices
+    await authRepository.updateUser((user as any)._id.toString(), {
+      password: hashedPassword,
+      otpCode: undefined,
+      otpExpiresAt: undefined,
+    });
+    
+    // Invalidate existing sessions
+    await authRepository.incrementTokenVersion((user as any)._id.toString());
+
+    return { message: 'Password has been successfully reset. You can now log in.' };
+  }
+
+  /**
    * Verifies the OTP sent to the user's email.
    */
   async verifyOTP(data: VerifyOTPRequestDTO): Promise<{ user: UserResponseDTO; tokens: AuthTokens }> {

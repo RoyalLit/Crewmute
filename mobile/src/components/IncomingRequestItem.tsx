@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { brandColors, spacing } from '../design/tokens';
 import { Avatar } from './Avatar';
+import { Alert } from './GlobalAlert';
 
 import { useAcceptRequestMutation, useRejectRequestMutation } from '../api/requestsHooks';
 

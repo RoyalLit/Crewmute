@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Dimensions, ActivityIndicator, RefreshControl } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Alert } from '../../src/components/GlobalAlert';
 
 import { useTheme } from '../../src/design/theme';
 import { TAB_BAR_HEIGHT, spacing } from '../../src/design/tokens';

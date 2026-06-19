@@ -115,6 +115,11 @@ export default function LoginScreen() {
                 />
               </Pressable>
             </View>
+            <View style={styles.forgotPasswordContainer}>
+              <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
+                <Text style={[styles.forgotPasswordText, { color: colors.interactive.primary }]}>Forgot Password?</Text>
+              </Pressable>
+            </View>
           </View>
           {error ? <Text style={[styles.errorText, { color: brandColors.coralPink }]}>{error}</Text> : null}
         </View>
@@ -209,8 +214,15 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   eyeIcon: {
-    padding: 8,
-    marginRight: -8,
+    padding: spacing.sm,
+  },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginTop: spacing.sm,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   errorText: {
     fontFamily: 'PlusJakartaSans-500Medium',

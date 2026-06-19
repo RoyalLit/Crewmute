@@ -34,6 +34,7 @@ import { queryClient } from '../src/lib/queryClient';
 import { AuthProvider } from '../src/context/AuthContext';
 import { SocketProvider } from '../src/context/SocketContext';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { GlobalAlert } from '../src/components/GlobalAlert';
 
 import { BootScreen } from '../src/components/BootScreen';
 
@@ -128,6 +129,7 @@ export default function RootLayout(): React.JSX.Element | null {
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="ride/[id]" />
                 </Stack>
+                <GlobalAlert />
                 {(!animationDone || !isAuthChecked) && <BootScreen onAnimationDone={() => setAnimationDone(true)} isReady={isAuthChecked} />}
               </>
             </ActionSheetProvider>

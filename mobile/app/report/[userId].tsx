@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/design/theme';
 import { brandColors, spacing } from '../../src/design/tokens';
 import { useReportUserMutation } from '../../src/api/safetyHooks';
 import { Ionicons } from '@expo/vector-icons';
+import { Alert } from '../../src/components/GlobalAlert';
 
 export default function ReportScreen() {
   const { userId } = useLocalSearchParams();
