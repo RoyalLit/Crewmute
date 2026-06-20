@@ -133,7 +133,6 @@ Crewmute/
 
 | Document | Description |
 |---|---|
-| [AGENT_RULES.md](AGENT_RULES.md) | Engineering constitution — all contributors must read first |
 | [PRD.md](PRD.md) | Product requirements, personas, and feature scope |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System design, layer responsibilities, API reference |
 | [DESIGN.md](DESIGN.md) | Design system — tokens, components, patterns |
@@ -142,8 +141,6 @@ Crewmute/
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
 
 ## Contributing
-
-Read [AGENT_RULES.md](AGENT_RULES.md) first — it is the engineering constitution for this repository and governs every change, human or AI.
 
 - **Branches:** `main` (stable) ← `dev` ← `feature/*`  
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, `docs:`, …)  

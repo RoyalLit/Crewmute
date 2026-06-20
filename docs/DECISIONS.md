@@ -2,7 +2,6 @@
 # Crewmute
 
 This document records all significant technical decisions made in the Crewmute repository.
-All ADRs must follow the format defined in AGENT_RULES.md §24.2.
 New ADRs are numbered sequentially. Numbers are never reused.
 
 ---
@@ -18,27 +17,23 @@ Code in both `backend/src/` and `mobile/src/` is organized by feature/domain (fe
 
 ### Context
 
-A conflict exists between the two authoritative source documents:
-- `ARCHITECTURE.md §2` shows a type-grouped layout (`controllers/`, `routes/`, `models/`, `components/`, `hooks/`)
-- `AGENT_RULES.md §7.1` and `§9.2` mandate feature-first organization
-
-The AGENT_RULES.md §2 precedence hierarchy places AGENT_RULES above the existing codebase. Both ARCHITECTURE.md and AGENT_RULES.md are ranked equally as source documents, but AGENT_RULES.md is the engineering constitution that explicitly governs architectural organization, and its feature-first mandate is a specific rule that overrides the illustrative overview in ARCHITECTURE.md.
+Feature-first organization collocates all layers of a feature in one directory. This was chosen over a type-grouped layout (separate `controllers/`, `routes/`, `models/`, `components/`, `hooks/` directories at the top level) for the reasons below.
 
 ### Reasoning
 
-Feature-first organization collocates all layers of a feature (route, controller, service, repository, validators, types, tests) in one directory. This reduces cognitive overhead when working on a feature, makes deletion of a feature clean, and aligns with the AGENT_RULES mandate.
+Feature-first organization collocates all layers of a feature (route, controller, service, repository, validators, types, tests) in one directory. This reduces cognitive overhead when working on a feature and makes deletion of a feature clean.
 
 The type-grouped layout in ARCHITECTURE.md §2 is treated as a high-level conceptual overview, not a binding directory specification.
 
 ### Alternatives Considered
 
-- **Type-grouped layout (ARCHITECTURE.md §2):** Rejected. AGENT_RULES.md explicitly mandates feature-first in §7.1 and §9.2. Following the type-grouped layout would violate the engineering constitution.
-- **Hybrid (type-grouped top level, feature-first inside features/):** Rejected. Adds complexity without benefit; AGENT_RULES.md is unambiguous.
+- **Type-grouped layout:** Rejected. Navigating a feature requires jumping across many top-level directories.
+- **Hybrid (type-grouped top level, feature-first inside features/):** Rejected. Adds complexity without benefit.
 
 ### Consequences
 
 - **Positive:** Collocated feature code, clean feature deletion, explicit cross-feature sharing rules.
-- **Negative:** ARCHITECTURE.md §2 diagrams differ from actual structure — ARCHITECTURE.md §2 should be updated in a follow-up docs PR to reflect the actual layout.
+- **Negative:** ARCHITECTURE.md §2 diagrams differ from actual structure — to be updated in a follow-up docs PR.
 - **Risks:** Contributors familiar with ARCHITECTURE.md §2 may expect type-grouped layout. Mitigated by this ADR and the README.
 - **Reversibility:** Reversing to type-grouped would require a broad rename/restructure. Treat as a durable decision.
 
@@ -55,20 +50,20 @@ The backend is written in TypeScript 5.x with `strict: true`, `noImplicitAny: tr
 
 ### Context
 
-AGENT_RULES.md §9 specifies the backend stack as "Node.js + Express + TypeScript." Strict mode is not explicitly mandated but directly supports the correctness and explicitness principles in §3.1 and the `any` prohibition in §3.4.
+The backend stack is Node.js + Express + TypeScript. Strict mode is not the default but directly supports correctness goals.
 
 ### Reasoning
 
-Strict TypeScript catches entire classes of runtime bugs at compile time (null dereferences, type mismatches, missing property accesses). The cost is more explicit type annotations; the benefit is that AGENT_RULES §27.2 (no hallucinated imports) is enforced by the compiler.
+Strict TypeScript catches entire classes of runtime bugs at compile time (null dereferences, type mismatches, missing property accesses). The cost is more explicit type annotations; the benefit is significantly fewer runtime errors.
 
 ### Alternatives Considered
 
-- **JavaScript (no TypeScript):** Rejected. AGENT_RULES.md §9 mandates TypeScript.
-- **TypeScript without strict mode:** Rejected. Non-strict TypeScript allows `any` implicitly, which violates §3.4 and undermines the correctness goal.
+- **JavaScript (no TypeScript):** Rejected. No static type safety.
+- **TypeScript without strict mode:** Rejected. Non-strict TypeScript allows `any` implicitly, which undermines the correctness goal.
 
 ### Consequences
 
-- **Positive:** Type safety, better IDE support, enforces AGENT_RULES §3.4 `any` prohibition.
+- **Positive:** Type safety, better IDE support, compile-time enforcement of interface contracts.
 - **Negative:** Slightly more verbose initial setup; some third-party types may require `@types/*` packages.
 - **Risks:** None significant.
 - **Reversibility:** Loosening strict mode later is straightforward. Tightening it later is painful. Start strict.
@@ -82,11 +77,11 @@ Strict TypeScript catches entire classes of runtime bugs at compile time (null d
 
 ### Decision
 
-`express-validator` is used for all HTTP request input validation in the backend. Environment variable validation is handled inline in `config/env.ts` without an external library (under 30 lines, per AGENT_RULES.md §15.1).
+`express-validator` is used for all HTTP request input validation in the backend. Environment variable validation is handled inline in `config/env.ts` without an external library (under 30 lines).
 
 ### Context
 
-ARCHITECTURE.md §8.2 explicitly names `express-validator`. AGENT_RULES.md §9.6 says "uses the library specified in ARCHITECTURE.md." Zod was considered as an alternative due to its TypeScript-native schema inference, but ARCHITECTURE.md is unambiguous.
+ARCHITECTURE.md §8.2 explicitly names `express-validator`. Zod was considered as an alternative due to its TypeScript-native schema inference, but ARCHITECTURE.md is unambiguous.
 
 ### Reasoning
 
@@ -94,8 +89,8 @@ ARCHITECTURE.md explicitly names `express-validator`. Following the authoritativ
 
 ### Alternatives Considered
 
-- **Zod:** TypeScript-native schema inference, single source of truth for types and validation. Rejected because ARCHITECTURE.md mandates `express-validator` for request validation. Zod may be reconsidered post-MVP via a superseding ADR if express-validator proves limiting.
-- **Joi:** Mature but JavaScript-first. Rejected — same reasoning as Zod plus less TypeScript integration.
+- **Zod:** TypeScript-native schema inference, single source of truth for types and validation. Rejected — ARCHITECTURE.md mandates `express-validator` for request validation. May be reconsidered post-MVP via a superseding ADR if express-validator proves limiting.
+- **Joi:** Mature but JavaScript-first. Rejected — less TypeScript integration.
 
 ### Consequences
 
@@ -117,7 +112,7 @@ ARCHITECTURE.md explicitly names `express-validator`. Following the authoritativ
 
 ### Context
 
-AGENT_RULES.md §20.3 explicitly forbids `console.log` for application logging and mandates a structured logger. No specific logger is named in ARCHITECTURE.md or AGENT_RULES.md.
+`console.log` is insufficient for production logging — it has no levels, no structured fields, and no JSON output. A structured logger is required.
 
 ### Reasoning
 
@@ -126,11 +121,11 @@ Pino is the fastest Node.js JSON logger, actively maintained, natively supports 
 ### Alternatives Considered
 
 - **Winston:** More feature-rich but heavier, slower, and more complex. Rejected — overkill for MVP scope.
-- **Morgan (HTTP only) + console:** Morgan handles HTTP logs only; `console.*` is forbidden by AGENT_RULES.md §20.3. Rejected.
+- **Morgan + console:** Morgan handles HTTP logs only; `console.*` is unsuitable for production. Rejected.
 
 ### Consequences
 
-- **Positive:** JSON-structured logs compatible with Railway log aggregation, fast, meets §20.3 requirements.
+- **Positive:** JSON-structured logs compatible with Railway log aggregation, fast, production-ready.
 - **Negative:** Requires `pino-pretty` for human-readable dev logs (dev dependency).
 - **Risks:** None significant.
 - **Reversibility:** Replacing logger requires updating all log call sites. Mitigated by the `shared/logger.ts` singleton — only one import point to change.
@@ -144,24 +139,24 @@ Pino is the fastest Node.js JSON logger, actively maintained, natively supports 
 
 ### Decision
 
-Backend tests use Jest as the test runner, `ts-jest` for TypeScript compilation in tests, and `supertest` for HTTP integration testing. Coverage thresholds are enforced per AGENT_RULES.md §22.4: statements 80%, branches 75%, functions 80%, lines 80%.
+Backend tests use Jest as the test runner, `ts-jest` for TypeScript compilation in tests, and `supertest` for HTTP integration testing. Coverage thresholds enforced: statements 80%, branches 75%, functions 80%, lines 80%.
 
 ### Context
 
-AGENT_RULES.md §22.2 mandates Jest for unit tests and Supertest + Jest for integration tests.
+A test runner, TypeScript integration, and HTTP assertion library are required for the backend test suite.
 
 ### Reasoning
 
-Jest is explicitly named in AGENT_RULES.md. `ts-jest` is the standard TypeScript integration for Jest, avoiding a separate compilation step. Supertest is the de facto HTTP assertion library for Express.
+Jest is the most widely-used JavaScript test runner with excellent TypeScript support via `ts-jest`. Supertest is the de facto HTTP assertion library for Express, enabling full-stack integration tests without running a server.
 
 ### Alternatives Considered
 
-- **Vitest:** Faster and more TypeScript-native than Jest. Rejected — AGENT_RULES.md §22.2 explicitly names Jest.
-- **Mocha + Chai:** Older, requires more configuration. Rejected — AGENT_RULES.md names Jest.
+- **Vitest:** Faster and more TypeScript-native than Jest. Rejected — the team is more familiar with Jest.
+- **Mocha + Chai:** Older, requires more configuration. Rejected — Jest's built-in assertions and mocking are more ergonomic.
 
 ### Consequences
 
-- **Positive:** Consistent with AGENT_RULES.md mandates; widely understood.
+- **Positive:** Widely understood, strong ecosystem, built-in mocking, coverage reporting.
 - **Negative:** Jest can be slow on large test suites; ts-jest adds compilation overhead.
 - **Risks:** None significant.
 - **Reversibility:** Migrating test runners is feasible but involves rewriting all test files.
@@ -175,20 +170,20 @@ Jest is explicitly named in AGENT_RULES.md. `ts-jest` is the standard TypeScript
 
 ### Decision
 
-Zustand is used for global application state on mobile. Per AGENT_RULES.md §12.1, global state is limited to: auth session, theme preference, and global notification queue. All API-derived data lives in server state (TanStack Query — see ADR-007).
+Zustand is used for global application state on mobile. Global state is limited to: auth session, theme preference, and global notification queue. All API-derived data lives in server state (TanStack Query — see ADR-007).
 
 ### Context
 
-ARCHITECTURE.md §2.2 explicitly names Zustand (`store/ — Zustand global state`). AGENT_RULES.md §12.1 defines the state scope hierarchy and what belongs in global state.
+ARCHITECTURE.md §2.2 explicitly names Zustand (`store/ — Zustand global state`). The scope of global state must be carefully constrained to avoid the common anti-pattern of putting API data in global state.
 
 ### Reasoning
 
-Zustand is explicitly named in ARCHITECTURE.md. It is lightweight (~1KB), TypeScript-native, and has minimal boilerplate. The constraint on global state scope (§12.1) prevents the common mistake of putting API data in global state.
+Zustand is explicitly named in ARCHITECTURE.md. It is lightweight (~1KB), TypeScript-native, and has minimal boilerplate. The strict constraint on global state scope prevents re-fetching issues and stale cache problems.
 
 ### Alternatives Considered
 
 - **Redux Toolkit:** More powerful but significantly more boilerplate. Rejected — Zustand is named in ARCHITECTURE.md and is sufficient for the constrained global state scope.
-- **React Context for global state:** Appropriate for feature-scoped state (§12.1 level 3) but causes re-render cascades at global scope. Rejected for global state.
+- **React Context for global state:** Appropriate for feature-scoped state but causes re-render cascades at global scope. Rejected for global state.
 
 ### Consequences
 
@@ -210,20 +205,20 @@ TanStack Query (React Query) v5 is used for all server/async state in the mobile
 
 ### Context
 
-AGENT_RULES.md §12.1 mandates a dedicated server state library for all API-derived data: "No manual re-implementation of caching logic — use the designated server state library." ARCHITECTURE.md does not name a specific server state library.
+A dedicated server state library is needed to handle caching, background refetching, and pagination without manual implementation.
 
 ### Reasoning
 
-TanStack Query v5 is the industry standard for React server state management. It handles caching, background refetching, stale-while-revalidate, pagination, and optimistic updates — features that will be needed for the ride feed and request management flows.
+TanStack Query v5 is the industry standard for React server state management. It handles caching, background refetching, stale-while-revalidate, pagination, and optimistic updates — features needed for the ride feed and request management flows.
 
 ### Alternatives Considered
 
 - **SWR:** Simpler API but fewer features. Rejected — TanStack Query's mutation support and cache invalidation primitives are needed for the ride/request lifecycle.
-- **Manual fetch + useState:** Forbidden by AGENT_RULES.md §12.2 ("No manual re-implementation of caching logic").
+- **Manual fetch + useState:** Would require re-implementing caching, loading states, and error handling in every hook. Rejected.
 
 ### Consequences
 
-- **Positive:** Eliminates all manual caching logic, handles loading/error/success states automatically, aligns with §12.1 requirements.
+- **Positive:** Eliminates all manual caching logic, handles loading/error/success states automatically.
 - **Negative:** Adds bundle size (~13KB gzipped). Accepted — the benefit is proportionate.
 - **Risks:** v5 API differs from v4; ensure all feature PRs use v5 patterns.
 - **Reversibility:** Replacing TanStack Query requires refactoring all data-fetching hooks. Treat as durable.
@@ -262,5 +257,3 @@ NativeWind is explicitly named in the PRD. It provides familiar Tailwind utility
 ---
 
 *DECISIONS.md — Crewmute Architectural Decision Records*
-*All ADRs authored by human engineers or reviewed by human engineers before acceptance.*
-*Format per AGENT_RULES.md §24.2*

@@ -27,7 +27,7 @@ Each endpoint is documented with:
 
 ## When to Update
 
-Per AGENT_RULES.md §14.1, API documentation must be updated in the **same PR** as the code change — never in a follow-up. Every new, changed, or deleted endpoint requires an update to this directory.
+API documentation must be updated in the **same PR** as the code change — never in a follow-up. Every new, changed, or deleted endpoint requires an update to this directory.
 
 ## Base URL
 
@@ -38,7 +38,7 @@ Local:      http://localhost:5000/api/v1
 
 ## Common Response Envelope
 
-All responses follow this structure (defined in AGENT_RULES.md §11.2):
+All responses follow this structure:
 
 ```json
 // Success

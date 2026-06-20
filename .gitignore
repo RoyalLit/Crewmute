@@ -55,3 +55,7 @@ logs/
 # Misc
 *.pem
 .cache/
+
+# AI agent instruction files — local only, not for the repo
+AGENT_RULES.md
+AGENTS.md

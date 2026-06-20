@@ -2,8 +2,6 @@
 
 First off, thanks for taking the time to contribute! Crewmute is a student-built project, and every contribution makes it better.
 
-All contributors — human or AI — must read [AGENT_RULES.md](AGENT_RULES.md) before making any change. It is the engineering constitution that governs this repository.
-
 ## 📋 Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
