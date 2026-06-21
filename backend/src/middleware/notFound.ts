@@ -2,7 +2,7 @@
  * 404 Not Found handler.
  *
  * Registered after all routes. Fires when no route matched the request.
- * Per AGENT_RULES.md §11.2 — uses the standard error envelope.
+ * Per — uses the standard error envelope.
  */
 
 import type { Request, Response } from 'express';

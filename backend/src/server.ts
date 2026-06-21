@@ -21,8 +21,7 @@ import { startRideExpiryCron } from './features/rides/rides.cron';
 import logger from './shared/logger';
 
 async function start(): Promise<void> {
-  // Log startup configuration (no secrets) per AGENT_RULES.md §21.1
-  logger.info(
+  // Log startup configuration (no secrets) logger.info(
     {
       nodeEnv: env.nodeEnv,
       port: env.port,

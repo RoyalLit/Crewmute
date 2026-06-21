@@ -1,8 +1,7 @@
 /**
  * Feature flag constants.
  *
- * Per AGENT_RULES.md §8.6:
- *   "Incomplete features that exist in the codebase but are not ready for users
+ * Per *   "Incomplete features that exist in the codebase but are not ready for users
  *   must be gated behind a feature flag."
  *
  * Naming convention: FF_<FEATURE_NAME> (all caps, underscore-separated).

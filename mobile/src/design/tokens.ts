@@ -5,8 +5,7 @@
  * Every color, spacing, radius, and size used in a component MUST come
  * from this file — no hardcoded values anywhere in the codebase.
  *
- * Per AGENT_RULES.md §8.3:
- *   // FORBIDDEN
+ * Per *   // FORBIDDEN
  *   <View style={{ padding: 16, backgroundColor: '#1A1A2E' }}>
  *
  *   // REQUIRED
@@ -204,5 +203,4 @@ export const radii = {
 export const TAB_BAR_HEIGHT = 64;
 
 // ── Touch Target ──────────────────────────────────────────────────────────────
-// Apple HIG standard, DESIGN.md §4.2, AGENT_RULES.md §8.5
-export const MIN_TOUCH_TARGET = 44;
+// Apple HIG standard, DESIGN.md §4.2, export const MIN_TOUCH_TARGET = 44;

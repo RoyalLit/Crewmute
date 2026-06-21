@@ -4,7 +4,7 @@
  * Attach this after a validator chain in a route to check for validation
  * errors and short-circuit with a 400 response before the controller runs.
  *
- * Per AGENT_RULES.md §9.6: validation is the controller's responsibility
+ * Per validation is the controller's responsibility
  * (enforced via the route → validator chain → this middleware → controller
  * pattern). Services assume their inputs are already valid.
  *
@@ -25,7 +25,7 @@ function validate(req: Request, res: Response, next: NextFunction): void {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    // Build field-level details map per AGENT_RULES.md §11.2 error envelope
+    // Build field-level details map error envelope
     const details: Record<string, unknown> = {};
     for (const error of errors.array()) {
       if ('path' in error) {

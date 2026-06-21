@@ -11,7 +11,7 @@
  * will be wired in the auth feature PR. The guard currently always
  * redirects to (tabs) in development.
  *
- * Per AGENT_RULES.md §8.7: "No data fetching in screen components."
+ * Per "No data fetching in screen components."
  * The layout handles the auth check; screens render UI only.
  */
 

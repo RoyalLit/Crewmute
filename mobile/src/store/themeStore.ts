@@ -5,7 +5,7 @@
  * Persisted to AsyncStorage under key 'crewmute:theme' per DESIGN.md §9.2.
  *
  * This is one of the three items that legitimately belong in global state
- * per AGENT_RULES.md §12.1: "Global state must contain: auth session,
+ * "Global state must contain: auth session,
  * theme preference, global notification queue only."
  */
 

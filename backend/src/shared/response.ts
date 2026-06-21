@@ -2,7 +2,7 @@
  * API response envelope helpers.
  *
  * All API responses must use these helpers to produce the exact envelope
- * structure defined in AGENT_RULES.md §11.2. Controllers use these to
+ * structure defined in . Controllers use these to
  * format responses; they must never construct response objects inline.
  */
 

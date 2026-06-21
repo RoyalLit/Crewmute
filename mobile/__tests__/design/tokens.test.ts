@@ -5,7 +5,7 @@
  * all required keys are present. They are not testing visual output —
  * they guard against accidental deletion of required token keys.
  *
- * Per AGENT_RULES.md §22.2: unit tests for all "business logic."
+ * Per unit tests for all "business logic."
  * The token system is load-bearing configuration — changes to it
  * affect every screen.
  */

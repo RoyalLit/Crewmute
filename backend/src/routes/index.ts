@@ -12,7 +12,7 @@
  *   etc.
  *
  * Health endpoints are exempt from auth middleware and rate limiting
- * per AGENT_RULES.md §21.2.
+ * .
  */
 
 import { Router } from 'express';

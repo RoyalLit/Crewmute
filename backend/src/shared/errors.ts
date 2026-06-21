@@ -5,7 +5,7 @@
  * (middleware/errorHandler.ts) uses instanceof checks on this hierarchy
  * to produce correctly structured API responses.
  *
- * Per AGENT_RULES.md §20.1 — this is the exact mandated structure.
+ * Per — this is the exact mandated structure.
  * Services throw these errors; controllers do not catch them (the central
  * error handler does).
  */
@@ -13,7 +13,7 @@
 /**
  * Base application error. All domain errors extend this class.
  * The `code` field is a machine-readable SCREAMING_SNAKE_CASE identifier
- * per AGENT_RULES.md §11.2.
+ * .
  */
 export class AppError extends Error {
   public readonly code: string;

@@ -1,7 +1,7 @@
 /**
  * Integration tests for health endpoints.
  *
- * Per AGENT_RULES.md §22.3: every API endpoint must have integration tests
+ * Per every API endpoint must have integration tests
  * covering the happy path at minimum.
  *
  * Health endpoints are always public (no auth required per §21.2).

@@ -10,7 +10,7 @@
  *   - Request interceptor: attach Authorization header (stub — wired in auth feature PR)
  *   - Response interceptor: handle 401 token refresh (stub — wired in auth feature PR)
  *
- * Per AGENT_RULES.md §8.2: "API calls must not appear in screen components."
+ * Per "API calls must not appear in screen components."
  * Feature services call these helpers; hooks call feature services; screens use hooks.
  */
 

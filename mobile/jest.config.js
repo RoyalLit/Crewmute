@@ -22,7 +22,7 @@ const config = {
   ],
   coverageThreshold: {
     global: {
-      // Coverage thresholds per AGENT_RULES.md §22.4 — must not be lowered without an ADR
+      // Coverage thresholds — must not be lowered without an ADR
       statements: 80,
       branches: 75,
       functions: 80,

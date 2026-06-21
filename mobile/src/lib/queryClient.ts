@@ -2,7 +2,7 @@
  * TanStack Query (React Query) client configuration.
  *
  * Per ADR-007: TanStack Query is the designated server state library.
- * Per AGENT_RULES.md §12.2: "No manual re-implementation of caching logic."
+ * Per "No manual re-implementation of caching logic."
  *
  * This QueryClient is provided at the app root in app/_layout.tsx.
  * Feature hooks use useQuery / useMutation / useInfiniteQuery from this client.

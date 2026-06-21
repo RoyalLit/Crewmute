@@ -2,7 +2,7 @@
  * Application-wide named constants.
  *
  * All magic numbers and strings must live here with a descriptive name.
- * AGENT_RULES.md §3.4: magic numbers and strings without named constants are forbidden.
+ * magic numbers and strings without named constants are forbidden.
  *
  * Do NOT import env here — constants are pure values with no external dependencies.
  */
@@ -22,12 +22,11 @@ export const AUTH = {
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_PAGE_SIZE: 20,
-  MAX_PAGE_SIZE: 100, // Enforced per AGENT_RULES.md §11.4: unbounded queries are forbidden
+  MAX_PAGE_SIZE: 100, // Enforced unbounded queries are forbidden
 } as const;
 
 export const RATE_LIMIT = {
-  // Auth endpoints: stricter limits per AGENT_RULES.md §19.4
-  AUTH_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  // Auth endpoints: stricter limits AUTH_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
   AUTH_MAX_REQUESTS: 10,
   // General endpoints
   GENERAL_WINDOW_MS: 15 * 60 * 1000,

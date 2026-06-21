@@ -65,7 +65,7 @@ export function createApp(): express.Application {
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
   // ── 5b. NoSQL Injection sanitizer (strips $ and . from req.body, params, query) ─
-  // Defense-in-depth per AGENT_RULES.md §19 — even if validators miss a field,
+  // Defense-in-depth — even if validators miss a field,
   // mongoSanitize strips Mongo operator keys before they reach a repository.
   app.use(mongoSanitize());
 

@@ -42,7 +42,7 @@ export interface PaginatedResult<T> {
 
 /**
  * Query parameters common to all paginated list endpoints.
- * Per AGENT_RULES.md §11.4.
+ * Per .
  */
 export interface PaginationQuery {
   page: number;

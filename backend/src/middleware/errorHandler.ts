@@ -4,8 +4,7 @@
  * This is the ONLY place where errors are converted to HTTP responses.
  * It must be registered last in the Express middleware chain (after all routes).
  *
- * Per AGENT_RULES.md §20.1:
- *   - AppError subclasses → use their statusCode and code
+ * Per *   - AppError subclasses → use their statusCode and code
  *   - Mongoose validation errors → 400
  *   - Mongoose cast errors (invalid ObjectId) → 404
  *   - Unknown errors → 500, stack logged (never exposed to client in production)
@@ -22,7 +21,7 @@ import { AppError } from '../shared/errors';
 import logger from '../shared/logger';
 
 /**
- * Formats the error response body per AGENT_RULES.md §11.2.
+ * Formats the error response body .
  */
 function formatErrorResponse(
   code: string,

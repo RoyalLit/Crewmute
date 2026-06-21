@@ -2,7 +2,7 @@
  * Application-wide named constants for the mobile app.
  *
  * All magic numbers in the mobile app must reference these constants.
- * Per AGENT_RULES.md §3.4.
+ * Per .
  */
 
 import { TAB_BAR_HEIGHT } from '../design/tokens';
@@ -13,8 +13,7 @@ export { TAB_BAR_HEIGHT };
 export const API = {
   // Timeout in milliseconds for all API requests
   REQUEST_TIMEOUT_MS: 10_000,
-  // Default pagination per AGENT_RULES.md §11.4
-  DEFAULT_PAGE_SIZE: 20,
+  // Default pagination DEFAULT_PAGE_SIZE: 20,
   MAX_PAGE_SIZE: 100,
 } as const;
 

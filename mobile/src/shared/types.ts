@@ -4,7 +4,7 @@
  * These are cross-cutting types used across multiple features.
  * Feature-specific types live in features/<name>/types.ts.
  *
- * These mirror the backend response envelope (AGENT_RULES.md §11.2)
+ * These mirror the backend response envelope ( )
  * so that API response parsing is consistent everywhere.
  */
 

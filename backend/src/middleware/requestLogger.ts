@@ -2,7 +2,7 @@
  * HTTP request logging middleware using pino-http.
  *
  * Logs every request with: method, path, status code, duration, and requestId.
- * Per AGENT_RULES.md §21.1.
+ * Per .
  *
  * The requestId is generated per-request and attached to req.headers so that
  * subsequent log entries in the same request lifecycle can correlate.
@@ -31,8 +31,7 @@ const requestLogger = pinoHttp({
     if (res.statusCode >= 400) return 'warn';
     return 'info';
   },
-  // Log API response time per AGENT_RULES.md §21.4
-  customSuccessMessage: (req, res) => {
+  // Log API response time customSuccessMessage: (req, res) => {
     return `${req.method} ${req.url} ${res.statusCode}`;
   },
   // Only log in non-test environments to keep test output clean

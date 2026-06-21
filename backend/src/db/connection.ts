@@ -7,7 +7,7 @@
  * Signal handlers (SIGTERM, SIGINT) are registered here to ensure graceful
  * shutdown — the server stops accepting requests before closing the DB connection.
  *
- * Per AGENT_RULES.md §21.1: "Application startup logs the loaded configuration
+ * Per "Application startup logs the loaded configuration
  * (without secrets) and confirms external service connectivity."
  */
 

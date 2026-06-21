@@ -16,10 +16,10 @@ module.exports = {
     'plugin:import/typescript',
   ],
   rules: {
-    // AGENT_RULES.md §20.3: console.* forbidden — use shared/logger.ts
+    // console.* forbidden — use shared/logger.ts
     'no-console': 'error',
 
-    // AGENT_RULES.md §3.4: any requires suppression comment
+    // any requires suppression comment
     // Downgrading to warn temporarily to unblock CI after fixing the resolver crash
     '@typescript-eslint/no-explicit-any': ['warn', { ignoreRestArgs: false }],
     '@typescript-eslint/no-unsafe-assignment': 'warn',
@@ -31,7 +31,7 @@ module.exports = {
     '@typescript-eslint/restrict-template-expressions': 'warn',
     '@typescript-eslint/consistent-type-imports': 'warn',
 
-    // AGENT_RULES.md §3.4: no silent failures
+    // no silent failures
     '@typescript-eslint/no-floating-promises': 'warn',
 
     // Clean imports
@@ -44,13 +44,13 @@ module.exports = {
       },
     ],
 
-    // AGENT_RULES.md §7.1: no circular dependencies
+    // no circular dependencies
     'import/no-cycle': ['error', { maxDepth: 5 }],
 
-    // AGENT_RULES.md §3.4: functions <= 50 lines (enforced by code review, flagged here)
+    // functions <= 50 lines (enforced by code review, flagged here)
     'max-lines-per-function': ['warn', { max: 55, skipBlankLines: true, skipComments: true }],
 
-    // AGENT_RULES.md §3.4: files <= 300 lines
+    // files <= 300 lines
     'max-lines': ['warn', { max: 320, skipBlankLines: true, skipComments: true }],
 
     // Prefer explicit return types on exported functions
