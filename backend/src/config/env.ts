@@ -31,6 +31,17 @@ const rawEnvSchema = z.object({
   CLOUDINARY_API_KEY: z.string().optional().default(''),
   CLOUDINARY_API_SECRET: z.string().optional().default(''),
   CLIENT_URL: z.string().default('*'),
+  MAGIC_OTP_ENABLED: z
+    .string()
+    .optional()
+    .default('false')
+    .transform((val) => val === 'true'),
+  CRON_ENABLED: z
+    .string()
+    .optional()
+    .default('true')
+    .transform((val) => val === 'true'),
+  SENTRY_DSN: z.string().optional().default(''),
 });
 
 type RawEnv = z.infer<typeof rawEnvSchema>;
@@ -57,6 +68,9 @@ interface Config {
     readonly apiSecret: string;
   };
   readonly clientUrl: string;
+  readonly magicOtpEnabled: boolean;
+  readonly cronEnabled: boolean;
+  readonly sentryDsn: string;
 }
 
 const env: Config = Object.freeze({
@@ -77,6 +91,9 @@ const env: Config = Object.freeze({
     apiSecret: parsed.CLOUDINARY_API_SECRET,
   },
   clientUrl: parsed.CLIENT_URL,
+  magicOtpEnabled: parsed.MAGIC_OTP_ENABLED,
+  cronEnabled: parsed.CRON_ENABLED,
+  sentryDsn: parsed.SENTRY_DSN,
 });
 
 export default env;

@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
-import { spacing, brandColors } from '../design/tokens';
+import { spacing, brandColors, WOMEN_ONLY_COLORS } from '../design/tokens';
 import { typography } from '../design/typography';
-import { formatDate } from '../utils/rideUtils';
+import { formatDate, parseLocation } from '../utils/rideUtils';
 import { Avatar } from './Avatar';
 import { StatusChip } from './StatusChip';
 import { SeatsBadge } from './SeatsBadge';
+import { VerifiedBadge } from './VerifiedBadge';
+import { StarRating } from './StarRating';
 
 interface RideCardProps {
   ride: any; // Using any for now to handle both dummy and real API data shapes flexibly
@@ -66,47 +68,95 @@ export const RideCard = React.memo(function RideCard({ ride, onPress }: RideCard
       accessibilityLabel={`Ride from ${ride.fromCity} to ${ride.toCity} on ${ride.date}`}
     >
       {/* Top Header: Date & Status */}
-      <View style={styles.topHeaderRow}>
+      <View style={[styles.topHeaderRow, { flexWrap: 'wrap', gap: 8 }]}>
         <View style={styles.dateContainer}>
           <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
           <Text style={[styles.dateText, { color: colors.text.secondary }]}>
             {formatDate(ride.departureDate || ride.date)}
           </Text>
         </View>
-        <StatusChip status={ride.status as any} />
+        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          {ride.genderPreference === 'SAME_GENDER' && (
+            <View style={{ backgroundColor: isDark ? 'rgba(255, 105, 180, 0.15)' : 'rgba(255, 105, 180, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="flower-outline" size={12} color={isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text} />
+              <Text style={{ fontSize: 10, fontFamily: 'PlusJakartaSans-700Bold', color: isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text }}>WOMEN ONLY</Text>
+            </View>
+          )}
+          <StatusChip status={ride.status as any} />
+        </View>
       </View>
 
       {/* Route Timeline */}
       <View style={styles.routeContainer}>
         <View style={styles.timeline}>
+          {/* Departure */}
           <View style={[styles.timelineCircle, { borderColor: brandColors.electricViolet }]} />
-          <View style={[styles.timelineLine, { backgroundColor: colors.border.default }]} />
+
+          {ride.stops && ride.stops.length > 0 ? (
+            <>
+              {ride.stops.map((_: string, index: number) => (
+                <React.Fragment key={`tl-${index}`}>
+                  <View style={[styles.timelineSegment, { backgroundColor: colors.border.default }]} />
+                  <View style={[styles.timelineDiamond, { backgroundColor: colors.text.secondary, transform: [{ rotate: '45deg' }] }]} />
+                </React.Fragment>
+              ))}
+              <View style={[styles.timelineSegment, { backgroundColor: colors.border.default }]} />
+            </>
+          ) : (
+            <View style={[styles.timelineLine, { backgroundColor: colors.border.default }]} />
+          )}
+
+          {/* Destination */}
           <View style={[styles.timelineDot, { backgroundColor: brandColors.coralPink }]} />
         </View>
 
         <View style={styles.routeLocations}>
-          <View style={styles.locationRow}>
-            <Text style={[styles.timeText, { color: colors.text.primary }]}>
+          <View style={[styles.locationRow, { alignItems: 'flex-start' }]}>
+            <Text style={[styles.timeText, { color: colors.text.primary, width: 52, marginTop: 2 }]}>
               {ride.departureTime || ride.time}
             </Text>
-            <Text 
-              style={[styles.cityText, { color: colors.text.primary }]} 
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {ride.fromCity}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text 
+                style={[styles.cityText, { color: colors.text.primary, paddingRight: 0, flex: undefined }]} 
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {parseLocation(ride.fromCity).city}
+              </Text>
+              {parseLocation(ride.fromCity).state ? (
+                <Text style={[styles.stateText, { color: colors.text.secondary }]} numberOfLines={1}>
+                  {parseLocation(ride.fromCity).state}
+                </Text>
+              ) : null}
+            </View>
           </View>
+
+          {/* Inline stops: just city name, smaller, muted */}
+          {ride.stops && ride.stops.length > 0 && ride.stops.map((stop: string, index: number) => (
+            <View key={`stop-${index}`} style={[styles.locationRow, { marginTop: spacing.md, alignItems: 'center' }]}>
+              <Text style={[styles.stateText, { color: colors.text.placeholder, width: 52 }]}>Stop</Text>
+              <Text style={[styles.stateText, { color: colors.text.secondary, flex: 1 }]} numberOfLines={1}>
+                {parseLocation(stop).city}
+              </Text>
+            </View>
+          ))}
           
-          <View style={[styles.locationRow, { marginTop: spacing.sm }]}>
-            <Text style={[styles.timeText, { color: colors.text.primary }]}>{ride.arrivalTime}</Text>
-            <Text 
-              style={[styles.cityText, { color: colors.text.primary }]} 
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {ride.toCity}
-            </Text>
+          <View style={[styles.locationRow, { marginTop: spacing.lg, alignItems: 'flex-start' }]}>
+            <Text style={[styles.timeText, { color: colors.text.primary, width: 52, marginTop: 2 }]}>{ride.arrivalTime}</Text>
+            <View style={{ flex: 1 }}>
+              <Text 
+                style={[styles.cityText, { color: colors.text.primary, paddingRight: 0, flex: undefined }]} 
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {parseLocation(ride.toCity).city}
+              </Text>
+              {parseLocation(ride.toCity).state ? (
+                <Text style={[styles.stateText, { color: colors.text.secondary }]} numberOfLines={1}>
+                  {parseLocation(ride.toCity).state}
+                </Text>
+              ) : null}
+            </View>
           </View>
         </View>
       </View>
@@ -125,12 +175,23 @@ export const RideCard = React.memo(function RideCard({ ride, onPress }: RideCard
             isVerified={ride.poster?.isVerified ?? ride.posterIsVerified}
           />
           <View style={styles.posterTextContainer}>
-            <Text style={[styles.posterName, { color: colors.text.primary }]} numberOfLines={1}>
-              {ride.poster ? ride.poster.name : ride.posterName}
-            </Text>
-            <Text style={[styles.posterCollege, { color: colors.text.secondary }]} numberOfLines={1}>
-              {ride.poster?.college || ride.posterCollege}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={[styles.posterName, { color: colors.text.primary }]} numberOfLines={1}>
+                {ride.poster ? ride.poster.name : ride.posterName}
+              </Text>
+              <VerifiedBadge isVerified={ride.poster?.isVerified ?? ride.posterIsVerified} size="small" />
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={[styles.posterCollege, { color: colors.text.secondary }]} numberOfLines={1}>
+                {ride.poster?.college || ride.posterCollege}
+              </Text>
+              {ride.poster?.averageRating !== undefined && (
+                <>
+                  <Text style={{ color: colors.text.placeholder, fontSize: 10 }}>•</Text>
+                  <StarRating rating={ride.poster.averageRating || 0} totalReviews={ride.poster.totalReviews || 0} size={12} />
+                </>
+              )}
+            </View>
           </View>
         </View>
 
@@ -174,7 +235,7 @@ const styles = StyleSheet.create({
   timeline: {
     alignItems: 'center',
     width: 24,
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   timelineCircle: {
     width: 14,
@@ -191,6 +252,17 @@ const styles = StyleSheet.create({
     marginVertical: -2,
     zIndex: 1,
   },
+  timelineSegment: {
+    width: 2,
+    flex: 1,
+    zIndex: 1,
+  },
+  timelineDiamond: {
+    width: 8,
+    height: 8,
+    zIndex: 2,
+    marginVertical: 2,
+  },
   timelineDot: {
     width: 12,
     height: 12,
@@ -201,7 +273,6 @@ const styles = StyleSheet.create({
   routeLocations: {
     flex: 1,
     justifyContent: 'space-between',
-    height: 60, // Keep height consistent for timeline alignment
   },
   locationRow: {
     flexDirection: 'row',
@@ -217,6 +288,11 @@ const styles = StyleSheet.create({
   timeText: {
     fontFamily: 'PlusJakartaSans-500Medium',
     fontSize: typography.body.fontSize,
+  },
+  stateText: {
+    fontFamily: 'PlusJakartaSans-500Medium',
+    fontSize: typography.bodySmall.fontSize,
+    marginTop: 2,
   },
   divider: {
     height: 1,

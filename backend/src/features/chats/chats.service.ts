@@ -86,6 +86,12 @@ export class ChatsService {
     const rideObjId = new mongoose.Types.ObjectId(rideId);
     const otherUserObjId = new mongoose.Types.ObjectId(otherUserId);
 
+    // Mark unread messages as read
+    await MessageModel.updateMany(
+      { rideId: rideObjId, senderId: otherUserObjId, receiverId: userObjId, readStatus: false },
+      { $set: { readStatus: true } }
+    );
+
     const messages = await MessageModel.find({
       rideId: rideObjId,
       $or: [

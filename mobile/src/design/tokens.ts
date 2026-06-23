@@ -204,3 +204,9 @@ export const TAB_BAR_HEIGHT = 64;
 
 // ── Touch Target ──────────────────────────────────────────────────────────────
 // Apple HIG standard, DESIGN.md §4.2, export const MIN_TOUCH_TARGET = 44;
+
+// ── Women-Only Badge ──────────────────────────────────────────────────────────
+export const WOMEN_ONLY_COLORS = {
+  bg: '#FFB6C1',
+  text: '#FF1493',
+} as const;

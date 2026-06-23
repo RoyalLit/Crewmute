@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../src/components/GlobalAlert';
 
 import { useTheme } from '../../src/design/theme';
-import { brandColors, spacing } from '../../src/design/tokens';
+import { brandColors, spacing, WOMEN_ONLY_COLORS } from '../../src/design/tokens';
 import { useAuthStore } from '../../src/store/authStore';
 import { Avatar } from '../../src/components/Avatar';
 import { SeatsBadge } from '../../src/components/SeatsBadge';
@@ -16,12 +16,12 @@ import { RideMap } from '../../src/components/RideMap';
 import { useRideDetailsQuery, useCancelRideMutation } from '../../src/api/ridesHooks';
 import { useCreateRequestMutation, useWithdrawRequestMutation, useMyRequestsQuery, useIncomingRequestsQuery } from '../../src/api/requestsHooks';
 import { IncomingRequestItem } from '../../src/components/IncomingRequestItem';
-import { getDerivedRideStatus, formatDate } from '../../src/utils/rideUtils';
+import { getDerivedRideStatus, formatDate, parseLocation } from '../../src/utils/rideUtils';
 
 export default function RideDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const currentUser = useAuthStore((state) => state.user);
 
   const { data: rideData, isLoading, isError } = useRideDetailsQuery(id as string);
@@ -135,59 +135,113 @@ export default function RideDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Route Card */}
-        <View style={[styles.card, { backgroundColor: colors.background.card, borderColor: isThemeDark(colors) ? '#2E2E4A' : 'transparent' }]}>
-          <View style={styles.topHeaderRow}>
+        <View style={[styles.card, { backgroundColor: colors.background.card, borderColor: isDark ? '#2E2E4A' : 'transparent' }]}>
+          <View style={[styles.topHeaderRow, { flexWrap: 'wrap', gap: 8 }]}>
             <View style={styles.dateContainer}>
               <Ionicons name="calendar-outline" size={16} color={colors.text.secondary} />
-              <Text style={[styles.dateText, { color: colors.text.secondary }]}>{formatDate(ride.departureDate)}</Text>
+              <Text style={[styles.dateText, { color: colors.text.secondary }]}>{formatDate(ride.departureDate || ride.date)}</Text>
             </View>
-            <StatusChip status={derivedStatus} />
+            <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+              {ride.genderPreference === 'SAME_GENDER' && (
+                <View style={{ backgroundColor: isDark ? 'rgba(255, 105, 180, 0.15)' : 'rgba(255, 105, 180, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="flower-outline" size={12} color={isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text} />
+                  <Text style={{ fontSize: 10, fontFamily: 'PlusJakartaSans-700Bold', color: isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text }}>WOMEN ONLY</Text>
+                </View>
+              )}
+              <StatusChip status={derivedStatus} />
+            </View>
           </View>
 
           <View style={styles.routeContainer}>
+            {/* Dynamic Timeline Column */}
             <View style={styles.timeline}>
+              {/* Departure circle */}
               <View style={[styles.timelineCircle, { borderColor: brandColors.electricViolet }]} />
-              <View style={[styles.timelineLine, { backgroundColor: colors.border.default }]} />
+
+              {ride.stops && ride.stops.length > 0 ? (
+                <>
+                  {ride.stops.map((_: string, index: number) => (
+                    <React.Fragment key={`tl-stop-${index}`}>
+                      {/* Line segment before this stop */}
+                      <View style={[styles.timelineSegment, { backgroundColor: colors.border.default }]} />
+                      {/* Diamond stop marker */}
+                      <View style={[styles.timelineDiamond, { backgroundColor: colors.text.secondary, transform: [{ rotate: '45deg' }] }]} />
+                    </React.Fragment>
+                  ))}
+                  {/* Final line to destination */}
+                  <View style={[styles.timelineSegment, { backgroundColor: colors.border.default }]} />
+                </>
+              ) : (
+                <View style={[styles.timelineLine, { backgroundColor: colors.border.default }]} />
+              )}
+
+              {/* Destination dot */}
               <View style={[styles.timelineDot, { backgroundColor: brandColors.coralPink }]} />
             </View>
 
+            {/* Route Locations Column */}
             <View style={styles.routeLocations}>
-              <View style={styles.locationRow}>
-                <Text style={[styles.timeText, { color: colors.text.primary }]}>{ride.departureTime}</Text>
-                <Text 
-                  style={[styles.cityText, { color: colors.text.primary }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {ride.fromCity}
-                </Text>
-              </View>
-              
-              {ride.stops && ride.stops.length > 0 && ride.stops.map((stop: string, index: number) => (
-                <View key={`stop-${index}`} style={[styles.locationRow, { marginTop: spacing.md }]}>
-                  <Text style={[styles.timeText, { color: colors.text.placeholder, fontSize: 14 }]}>Stop</Text>
-                  <Text 
-                    style={[styles.cityText, { color: colors.text.secondary }]}
+              {/* Departure */}
+              <View style={[styles.locationRow, { alignItems: 'flex-start' }]}>
+                <Text style={[styles.timeText, { color: colors.text.primary, width: 52, marginTop: 2 }]}>{ride.departureTime || ride.time}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[styles.cityText, { color: colors.text.primary, flex: undefined }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                   >
-                    {stop}
+                    {parseLocation(ride.fromCity).city}
                   </Text>
+                  {parseLocation(ride.fromCity).state ? (
+                    <Text style={[styles.stateText, { color: colors.text.secondary }]} numberOfLines={1}>
+                      {parseLocation(ride.fromCity).state}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+
+              {/* Intermediate stops */}
+              {ride.stops && ride.stops.length > 0 && ride.stops.map((stop: string, index: number) => (
+                <View key={`stop-${index}`} style={[styles.locationRow, { marginTop: spacing.lg, alignItems: 'flex-start' }]}>
+                  <Text style={[styles.timeText, { color: colors.text.placeholder, width: 52, fontSize: 12, marginTop: 2 }]}>Stop</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[styles.cityText, { color: colors.text.secondary, flex: undefined, fontSize: 16 }]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      {parseLocation(stop).city}
+                    </Text>
+                    {parseLocation(stop).state ? (
+                      <Text style={[styles.stateText, { color: colors.text.secondary }]} numberOfLines={1}>
+                        {parseLocation(stop).state}
+                      </Text>
+                    ) : null}
+                  </View>
                 </View>
               ))}
-              
-              <View style={[styles.locationRow, { marginTop: spacing.md }]}>
-                <Text style={[styles.timeText, { color: colors.text.primary }]}>{ride.arrivalTime}</Text>
-                <Text 
-                  style={[styles.cityText, { color: colors.text.primary }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {ride.toCity}
-                </Text>
+
+              {/* Destination */}
+              <View style={[styles.locationRow, { marginTop: spacing.lg, alignItems: 'flex-start' }]}>
+                <Text style={[styles.timeText, { color: colors.text.primary, width: 52, marginTop: 2 }]}>{ride.arrivalTime}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[styles.cityText, { color: colors.text.primary, flex: undefined }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
+                    {parseLocation(ride.toCity).city}
+                  </Text>
+                  {parseLocation(ride.toCity).state ? (
+                    <Text style={[styles.stateText, { color: colors.text.secondary }]} numberOfLines={1}>
+                      {parseLocation(ride.toCity).state}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
             </View>
           </View>
+
 
           <View style={[styles.divider, { backgroundColor: colors.border.default }]} />
 
@@ -230,7 +284,7 @@ export default function RideDetailScreen() {
 
         {/* Route Map */}
         <Text style={[styles.sectionTitle, { color: colors.text.primary, marginTop: spacing.xl }]}>Route</Text>
-        <RideMap fromCity={ride.fromCity} toCity={ride.toCity} />
+        <RideMap fromCity={ride.fromCity} toCity={ride.toCity} stops={ride.stops || []} />
 
         {/* Incoming Requests for Poster */}
         {isPoster && rideIncomingRequests.length > 0 && (
@@ -301,12 +355,20 @@ export default function RideDetailScreen() {
           )}
         </View>
       )}
+
+      {derivedStatus === 'expired' && !isPoster && existingRequest?.status === 'accepted' && (
+        <View style={[styles.bottomCta, { backgroundColor: colors.background.primary, borderTopColor: colors.border.default }]}>
+          <Pressable 
+            style={[styles.btn, { backgroundColor: colors.interactive.primary }]}
+            onPress={() => router.push(`/review/${ride.poster.id || ride.posterId}?rideId=${ride.id}`)}
+          >
+            <Ionicons name="star" size={20} color={colors.interactive.primaryText} style={{ marginRight: 8 }} />
+            <Text style={[styles.btnText, { color: colors.interactive.primaryText }]}>Leave a Review</Text>
+          </Pressable>
+        </View>
+      )}
     </SafeAreaView>
   );
-}
-
-function isThemeDark(colors: any) {
-  return colors.background.primary === '#0D0D1C';
 }
 
 const styles = StyleSheet.create({
@@ -373,7 +435,7 @@ const styles = StyleSheet.create({
   timeline: {
     alignItems: 'center',
     width: 24,
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   timelineCircle: {
     width: 14,
@@ -389,6 +451,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginVertical: -2,
     zIndex: 1,
+  },
+  timelineSegment: {
+    width: 2,
+    flex: 1,
+    zIndex: 1,
+  },
+  timelineDiamond: {
+    width: 8,
+    height: 8,
+    zIndex: 2,
+    marginVertical: 2,
   },
   timelineDot: {
     width: 12,
@@ -440,6 +513,11 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-800ExtraBold',
     fontSize: 22,
     letterSpacing: -0.5,
+  },
+  stateText: {
+    fontFamily: 'PlusJakartaSans-500Medium',
+    fontSize: 13,
+    marginTop: 2,
   },
   sectionTitle: {
     fontFamily: 'PlusJakartaSans-700Bold',

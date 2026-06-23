@@ -9,6 +9,7 @@
  */
 
 process.env['NODE_ENV'] = 'development';
+process.env['MAGIC_OTP_ENABLED'] = 'true';
 process.env['PORT'] = '5001';
 process.env['MONGO_URI'] = 'mongodb://localhost:27017/crewmute_test';
 // Minimum-length test secrets — not used in real operations

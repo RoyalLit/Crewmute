@@ -21,6 +21,7 @@ export default function ChatsScreen(): React.JSX.Element {
       key={chat.id} 
       id={chat.id}
       name={chat.otherUser.name}
+      imageUrl={chat.otherUser.profilePhotoUrl}
       lastMessage={chat.lastMessage}
       time={new Date(chat.time).toLocaleDateString()}
       unreadCount={chat.unreadCount}

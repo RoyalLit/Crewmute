@@ -1,6 +1,7 @@
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import type { Router } from 'expo-router';
 import logger from './logger';
 
 let Notifications: any = null;
@@ -69,11 +70,82 @@ export async function registerForPushNotificationsAsync() {
       ).data;
       logger.log('Expo Push Token:', token);
     } catch (e) {
-      logger.error('Error getting expo push token', e);
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      logger.log('Push tokens disabled (no entitlements)', msg);
     }
   } else {
     logger.log('Must use physical device for Push Notifications');
   }
 
   return token;
+}
+
+interface NotificationData {
+  route?: string;
+  rideId?: string;
+  otherUserId?: string;
+}
+
+/**
+ * Navigate based on notification data payload.
+ * Called when user taps a notification or app opens from cold start via notification.
+ */
+export function navigateFromNotification(
+  data: NotificationData | undefined,
+  router: Router
+): void {
+  if (!data?.route) {
+    return;
+  }
+
+  try {
+    router.push(data.route as any);
+  } catch (e) {
+    logger.log('Failed to navigate from notification:', e);
+  }
+}
+
+/**
+ * Register a listener for notification taps (foreground + background).
+ * Returns an unsubscribe function.
+ */
+export function onNotificationResponse(
+  router: Router
+): (() => void) | undefined {
+  if (!Notifications) {
+    return undefined;
+  }
+
+  const subscription = Notifications.addNotificationResponseReceivedListener(
+    (response: any) => {
+      const data = response?.notification?.request?.content?.data as NotificationData | undefined;
+      navigateFromNotification(data, router);
+    }
+  );
+
+  return () => subscription.remove();
+}
+
+/**
+ * Check if the app was opened from a notification tap (cold start).
+ * Returns a cleanup function.
+ */
+export async function checkInitialNotificationResponse(
+  router: Router
+): Promise<(() => void) | undefined> {
+  if (!Notifications) {
+    return undefined;
+  }
+
+  try {
+    const response = await Notifications.getLastNotificationResponseAsync();
+    if (response) {
+      const data = response?.notification?.request?.content?.data as NotificationData | undefined;
+      navigateFromNotification(data, router);
+    }
+  } catch (e) {
+    logger.log('Failed to check initial notification response:', e);
+  }
+
+  return undefined;
 }

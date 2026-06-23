@@ -48,8 +48,8 @@ export default function RidesScreen(): React.JSX.Element {
     };
   });
 
-  const allRides = Array.isArray(data?.data) ? data.data : [];
-  const myRequests = Array.isArray(myReqData?.data) ? myReqData.data : [];
+  const allRides = Array.isArray(data?.data?.data) ? data.data.data : (Array.isArray(data?.data) ? data.data : []);
+  const myRequests = Array.isArray(myReqData?.data?.data) ? myReqData.data.data : (Array.isArray(myReqData?.data) ? myReqData.data : []);
   const incomingRequests = Array.isArray(incomingData?.data) ? incomingData.data : [];
 
   const requestedRides = myRequests.map((req: any) => {
@@ -117,7 +117,6 @@ export default function RidesScreen(): React.JSX.Element {
 
   const handlePressRide = (rideId: string) => {
     if (rideId) {
-      // @ts-ignore
       router.push(`/ride/${rideId}`);
     }
   };
@@ -132,11 +131,11 @@ export default function RidesScreen(): React.JSX.Element {
       <View style={styles.rideItemWrapper}>
         <Pressable 
           onPress={() => handlePressRide(rideId)}
-          onLongPress={() => ride.status === 'active' && !ride._requestStatus ? handleCancelRide(rideId) : null}
+          onLongPress={() => getDerivedRideStatus(ride) === 'active' && !ride._requestStatus ? handleCancelRide(rideId) : null}
           delayLongPress={500}
         >
           <TicketRideCard ride={ride} requestStatus={ride._requestStatus} />
-          {ride.status === 'active' && !ride._requestStatus && (
+          {getDerivedRideStatus(ride) === 'active' && !ride._requestStatus && (
             <Text style={[styles.cancelText, { color: colors.text.secondary }]}>
               Long press to cancel
             </Text>

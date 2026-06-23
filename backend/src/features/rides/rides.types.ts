@@ -11,6 +11,7 @@ export interface CreateRideRequestDTO {
   totalSeats: number;
   farePerSeat: number;
   cabType: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
+  genderPreference?: 'ANY' | 'SAME_GENDER';
 }
 
 export interface UpdateRideRequestDTO {
@@ -21,6 +22,7 @@ export interface UpdateRideRequestDTO {
   totalSeats?: number;
   farePerSeat?: number;
   cabType?: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
+  genderPreference?: 'ANY' | 'SAME_GENDER';
 }
 
 export interface RideFilterQuery extends PaginationQuery {
@@ -28,6 +30,8 @@ export interface RideFilterQuery extends PaginationQuery {
   toCity?: string;
   date?: string;
   excludePosterId?: string;
+  requesterId?: string;
+  requesterGender?: 'MALE' | 'FEMALE' | 'OTHER';
 }
 
 export interface RideResponseDTO {
@@ -44,6 +48,7 @@ export interface RideResponseDTO {
   availableSeats: number;
   farePerSeat: number;
   cabType: string;
+  genderPreference: string;
   status: string;
   createdAt: Date;
 }

@@ -8,11 +8,15 @@ export const createRideValidator = [
   body('arrivalTime').matches(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).withMessage('arrivalTime must be HH:mm format'),
   body('stops').optional().isArray().withMessage('stops must be an array of strings'),
   body('stops.*').isString().trim().notEmpty().withMessage('each stop must be a non-empty string'),
-  body('totalSeats').isInt({ min: 1, max: 7 }).withMessage('totalSeats must be between 1 and 7'),
+  body('totalSeats').isInt({ min: 1, max: 6 }).withMessage('totalSeats must be between 1 and 6'),
   body('farePerSeat').isInt({ min: 0 }).withMessage('farePerSeat must be a non-negative number'),
   body('cabType')
     .isIn(['Hatchback', 'Sedan', 'SUV', 'MUV', 'Any', 'Other'])
     .withMessage('cabType must be a valid option'),
+  body('genderPreference')
+    .optional()
+    .isIn(['ANY', 'SAME_GENDER'])
+    .withMessage('genderPreference must be ANY or SAME_GENDER'),
 ];
 
 export const updateRideValidator = [
@@ -21,12 +25,16 @@ export const updateRideValidator = [
   body('arrivalTime').optional().matches(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/).withMessage('arrivalTime must be HH:mm format'),
   body('stops').optional().isArray().withMessage('stops must be an array of strings'),
   body('stops.*').isString().trim().notEmpty().withMessage('each stop must be a non-empty string'),
-  body('totalSeats').optional().isInt({ min: 1, max: 7 }).withMessage('totalSeats must be between 1 and 7'),
+  body('totalSeats').optional().isInt({ min: 1, max: 6 }).withMessage('totalSeats must be between 1 and 6'),
   body('farePerSeat').optional().isInt({ min: 0 }).withMessage('farePerSeat must be a non-negative number'),
   body('cabType')
     .optional()
     .isIn(['Hatchback', 'Sedan', 'SUV', 'MUV', 'Any', 'Other'])
     .withMessage('cabType must be a valid option'),
+  body('genderPreference')
+    .optional()
+    .isIn(['ANY', 'SAME_GENDER'])
+    .withMessage('genderPreference must be ANY or SAME_GENDER'),
 ];
 
 export const rideFilterValidator = [

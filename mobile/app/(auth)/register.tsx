@@ -18,6 +18,7 @@ export default function RegisterScreen() {
     email: '',
     college: '',
     homeCity: '',
+    gender: 'MALE' as 'MALE' | 'FEMALE' | 'OTHER',
     password: '',
   });
   
@@ -32,7 +33,7 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     setError('');
     
-    if (!form.name || !form.email || !form.college || !form.homeCity || !form.password) {
+    if (!form.name || !form.email || !form.college || !form.homeCity || !form.gender || !form.password) {
       setError('Please fill in all fields');
       return;
     }
@@ -124,6 +125,31 @@ export default function RegisterScreen() {
               placeholder="E.g., Delhi, Mumbai"
               iconName="location-outline"
             />
+          </View>
+
+          <View style={[styles.inputGroup, { zIndex: 1 }]}>
+            <Text style={[styles.label, { color: colors.text.secondary }]}>Gender</Text>
+            <View style={styles.genderContainer}>
+              {(['MALE', 'FEMALE', 'OTHER'] as const).map((option) => (
+                <Pressable
+                  key={option}
+                  onPress={() => setForm({ ...form, gender: option })}
+                  style={[
+                    styles.genderOption,
+                    { borderColor: colors.border.default, backgroundColor: colors.background.subtle },
+                    form.gender === option && { borderColor: brandColors.mintGreen, backgroundColor: 'rgba(0, 204, 136, 0.1)' }
+                  ]}
+                >
+                  <Text style={[
+                    styles.genderText,
+                    { color: colors.text.secondary },
+                    form.gender === option && { color: brandColors.mintGreen, fontWeight: '600' }
+                  ]}>
+                    {option.charAt(0) + option.slice(1).toLowerCase()}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
@@ -277,6 +303,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  genderText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   buttonText: {
     fontFamily: 'PlusJakartaSans-Bold',

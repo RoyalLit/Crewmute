@@ -12,9 +12,12 @@ const router = Router();
 router.use(requireAuth); // All user routes require authentication
 
 router.get('/me', asyncHandler(usersController.getCurrentUser.bind(usersController)));
+router.get('/me/stats', asyncHandler(usersController.getStats.bind(usersController)));
 router.patch('/me', validateUpdateProfile, asyncHandler(usersController.updateProfile.bind(usersController)));
 router.post('/me/photo', uploadMiddleware.single('photo'), asyncHandler(usersController.uploadPhoto.bind(usersController)));
 router.put('/push-token', asyncHandler(usersController.updatePushToken.bind(usersController)));
 router.get('/:id', asyncHandler(usersController.getPublicProfile.bind(usersController)));
+router.post('/:id/reviews', asyncHandler(usersController.createReview.bind(usersController)));
+router.get('/:id/reviews', asyncHandler(usersController.getReviews.bind(usersController)));
 
 export default router;

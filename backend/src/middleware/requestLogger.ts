@@ -31,7 +31,8 @@ const requestLogger = pinoHttp({
     if (res.statusCode >= 400) return 'warn';
     return 'info';
   },
-  // Log API response time customSuccessMessage: (req, res) => {
+  // Log API response time
+  customSuccessMessage: (req, res) => {
     return `${req.method} ${req.url} ${res.statusCode}`;
   },
   // Only log in non-test environments to keep test output clean

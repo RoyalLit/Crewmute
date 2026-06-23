@@ -9,6 +9,10 @@ interface User {
   college: string;
   homeCity?: string;
   profilePhotoUrl?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  isCollegeVerified: boolean;
+  averageRating: number;
+  totalReviews: number;
   isEmailVerified: boolean;
   status: string;
   createdAt: Date;

@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/design/theme';
 import { TAB_BAR_HEIGHT, spacing, brandColors } from '../../src/design/tokens';
 import { RideCard } from '../../src/components/RideCard';
-import { useThemeStore } from '../../src/store/themeStore';
 import { useBrowseRidesQuery } from '../../src/api/ridesHooks';
 import { CityAutocomplete } from '../../src/components/CityAutocomplete';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -17,7 +16,6 @@ import { useRouter } from 'expo-router';
 
 export default function ExploreScreen(): React.JSX.Element {
   const { colors, isDark } = useTheme();
-  const setPreference = useThemeStore((state) => state.setPreference);
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -41,7 +39,6 @@ export default function ExploreScreen(): React.JSX.Element {
       onPress={() => {
         const id = item._id || item.id;
         if (id) {
-          // @ts-ignore - expo router dynamic routes typed loosely
           router.push(`/ride/${id}`);
         }
       }}
@@ -82,10 +79,10 @@ export default function ExploreScreen(): React.JSX.Element {
             <Text style={[styles.subtitle, { color: colors.text.secondary }]}>Where are you heading today?</Text>
           </View>
           <Pressable 
-            onPress={() => setPreference(isDark ? 'light' : 'dark')}
+            onPress={() => alert('Advanced filters coming soon!')}
             style={[styles.themeToggle, { backgroundColor: colors.background.subtle }]}
           >
-            <Ionicons name={isDark ? "sunny" : "moon"} size={22} color={colors.text.primary} />
+            <Ionicons name="options-outline" size={22} color={colors.text.primary} />
           </Pressable>
         </View>
 

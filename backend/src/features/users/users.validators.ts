@@ -6,6 +6,7 @@ const ALLOWED_UPDATE_FIELDS = [
   'college',
   'homeCity',
   'profilePhotoUrl',
+  'gender',
 ];
 
 export const validateUpdateProfile = [

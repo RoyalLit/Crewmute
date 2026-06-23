@@ -28,6 +28,11 @@ const rideRequestSchema = new Schema<IRideRequest>(
   }
 );
 
+// Compound indexes for query performance
+rideRequestSchema.index({ rideId: 1, status: 1 });
+rideRequestSchema.index({ requesterId: 1, createdAt: -1 });
+rideRequestSchema.index({ posterId: 1, status: 1, createdAt: -1 });
+
 // Prevent a user from requesting the same ride twice
 rideRequestSchema.index({ rideId: 1, requesterId: 1 }, { unique: true });
 

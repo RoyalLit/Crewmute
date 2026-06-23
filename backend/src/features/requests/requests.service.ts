@@ -6,9 +6,9 @@ import type { PaginatedResult } from '../../shared/types';
 import { getIO } from '../chats/socket';
 import { notificationsService } from '../notifications/notifications.service';
 import { ridesRepository } from '../rides/rides.repository';
-import { ridesService } from '../rides/rides.service';
+import type { RideResponseDTO } from '../rides/rides.types';
 import { usersRepository } from '../users/users.repository';
-import { usersService } from '../users/users.service';
+import type { PublicProfileResponseDTO } from '../users/users.types';
 
 import { requestsRepository } from './requests.repository';
 import type { CreateRequestDTO, RideRequestResponseDTO } from './requests.types';
@@ -23,6 +23,40 @@ export class RequestsService {
       posterId: req.posterId.toString(),
       status: req.status,
       createdAt: req.createdAt,
+    };
+  }
+
+  private formatRide(ride: any): RideResponseDTO {
+    return {
+      id: ride._id.toString(),
+      posterId: ride.posterId.toString(),
+      fromCity: ride.fromCity,
+      toCity: ride.toCity,
+      departureDate: ride.departureDate,
+      departureTime: ride.departureTime,
+      arrivalTime: ride.arrivalTime,
+      stops: ride.stops || [],
+      totalSeats: ride.totalSeats,
+      availableSeats: ride.availableSeats,
+      farePerSeat: ride.farePerSeat,
+      cabType: ride.cabType,
+      genderPreference: ride.genderPreference,
+      status: ride.status,
+      createdAt: ride.createdAt,
+    };
+  }
+
+  private formatPublicProfile(user: any): PublicProfileResponseDTO {
+    return {
+      id: user._id.toString(),
+      name: user.name,
+      college: user.college,
+      homeCity: user.homeCity,
+      profilePhotoUrl: user.profilePhotoUrl,
+      gender: user.gender,
+      isCollegeVerified: user.isCollegeVerified,
+      averageRating: user.averageRating,
+      totalReviews: user.totalReviews,
     };
   }
 
@@ -65,17 +99,16 @@ export class RequestsService {
   async getMyRequests(userId: string, page = 1, pageSize = 20): Promise<PaginatedResult<RideRequestResponseDTO>> {
     const result = await requestsRepository.findByRequester(userId, page, pageSize);
 
-    const formattedData = await Promise.all(
-      result.data.map(async (req) => {
-        const formatted = this.formatRequest(req);
-        try {
-          formatted.ride = await ridesService.getRideDetails(formatted.rideId);
-        } catch {
-          logger.warn('Failed to fetch ride details for request');
-        }
-        return formatted;
-      })
-    );
+    const rideIds = [...new Set(result.data.map(r => r.rideId.toString()))];
+    const rides = rideIds.length ? await ridesRepository.findByIds(rideIds) : [];
+    const rideMap = new Map(rides.map(r => [r._id.toString(), this.formatRide(r)]));
+
+    const formattedData = result.data.map(req => {
+      const formatted = this.formatRequest(req);
+      const ride = rideMap.get(formatted.rideId);
+      if (ride) formatted.ride = ride;
+      return formatted;
+    });
 
     return { ...result, data: formattedData };
   }
@@ -83,18 +116,25 @@ export class RequestsService {
   async getIncomingRequests(userId: string, page = 1, pageSize = 20): Promise<PaginatedResult<RideRequestResponseDTO>> {
     const result = await requestsRepository.findByPoster(userId, page, pageSize);
 
-    const formattedData = await Promise.all(
-      result.data.map(async (req) => {
-        const formatted = this.formatRequest(req);
-        try {
-          formatted.requester = await usersService.getPublicProfile(formatted.requesterId);
-          formatted.ride = await ridesService.getRideDetails(formatted.rideId);
-        } catch {
-          logger.warn('Failed to fetch requester or ride details for incoming request');
-        }
-        return formatted;
-      })
-    );
+    const rideIds = [...new Set(result.data.map(r => r.rideId.toString()))];
+    const requesterIds = [...new Set(result.data.map(r => r.requesterId.toString()))];
+
+    const [rides, users] = await Promise.all([
+      rideIds.length ? ridesRepository.findByIds(rideIds) : Promise.resolve([]),
+      requesterIds.length ? usersRepository.findByIds(requesterIds) : Promise.resolve([]),
+    ]);
+
+    const rideMap = new Map(rides.map(r => [r._id.toString(), this.formatRide(r)]));
+    const userMap = new Map(users.map(u => [u._id.toString(), this.formatPublicProfile(u)]));
+
+    const formattedData = result.data.map(req => {
+      const formatted = this.formatRequest(req);
+      const ride = rideMap.get(formatted.rideId);
+      if (ride) formatted.ride = ride;
+      const requester = userMap.get(formatted.requesterId);
+      if (requester) formatted.requester = requester;
+      return formatted;
+    });
 
     return { ...result, data: formattedData };
   }

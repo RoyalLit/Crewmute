@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import client from './client';
 import { useAuthStore } from '../store/authStore';
 
@@ -7,7 +7,7 @@ export const useUpdateProfileMutation = () => {
   const updateProfileState = useAuthStore(state => state.updateProfile);
 
   return useMutation({
-    mutationFn: async (data: { name?: string; college?: string; homeCity?: string }) => {
+    mutationFn: async (data: { name?: string; college?: string; homeCity?: string; gender?: 'MALE' | 'FEMALE' | 'OTHER' }) => {
       const response = await client.patch('/users/me', data);
       return response.data;
     },
@@ -42,5 +42,40 @@ export const useUpdateAvatarMutation = () => {
       updateProfileState(data.data);
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
     },
+  });
+};
+
+export const useCreateReviewMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { userId: string; rideId: string; rating: number; comment?: string }) => {
+      const response = await client.post(`/users/${data.userId}/reviews`, data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['users', variables.userId, 'reviews'] });
+    },
+  });
+};
+
+export const useMyStatsQuery = () => {
+  return useQuery({
+    queryKey: ['users', 'me', 'stats'],
+    queryFn: async () => {
+      const response = await client.get('/users/me/stats');
+      return response.data;
+    },
+  });
+};
+
+export const usePublicProfileQuery = (userId: string) => {
+  return useQuery({
+    queryKey: ['users', userId],
+    queryFn: async () => {
+      const response = await client.get(`/users/${userId}`);
+      return response.data;
+    },
+    enabled: !!userId,
   });
 };

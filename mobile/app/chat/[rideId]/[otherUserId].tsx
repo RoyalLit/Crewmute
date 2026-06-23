@@ -8,13 +8,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '../../../src/design/theme';
 import { spacing, brandColors } from '../../../src/design/tokens';
 import { useSocket } from '../../../src/context/SocketContext';
-import { useChatHistory, MessageResponseDTO } from '../../../src/api/chatsHooks';
+import type { MessageResponseDTO } from '../../../src/api/chatsHooks';
+import { useChatHistory } from '../../../src/api/chatsHooks';
+import { usePublicProfileQuery } from '../../../src/api/usersHooks';
 import { useAuth } from '../../../src/context/AuthContext';
 import { useRideDetailsQuery } from '../../../src/api/ridesHooks';
 import { useWithdrawRequestMutation, useRemovePassengerMutation, useIncomingRequestsQuery, useMyRequestsQuery } from '../../../src/api/requestsHooks';
 import { useBlockUserMutation, useCheckBlockQuery } from '../../../src/api/safetyHooks';
 import { getDerivedRideStatus } from '../../../src/utils/rideUtils';
 import { CustomActionSheet } from '../../../src/components/CustomActionSheet';
+import { Avatar } from '../../../src/components/Avatar';
 import { CHAT_BG_LIGHT, CHAT_BG_DARK } from '../../../src/utils/imageAssets';
 
 export default function ChatScreen(): React.JSX.Element {
@@ -33,8 +36,10 @@ export default function ChatScreen(): React.JSX.Element {
   const { data: incomingRequests } = useIncomingRequestsQuery();
   const { data: myRequests } = useMyRequestsQuery();
   const { data: blockData } = useCheckBlockQuery(otherUserId as string);
+  const { data: profileData } = usePublicProfileQuery(otherUserId as string);
 
   const isBlocked = blockData?.data?.isBlocked;
+  const otherUserProfile = profileData?.data;
 
   const removePassengerMutation = useRemovePassengerMutation();
   const withdrawRequestMutation = useWithdrawRequestMutation();
@@ -166,13 +171,24 @@ export default function ChatScreen(): React.JSX.Element {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
       <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.border.default }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
-        </Pressable>
+        <View style={styles.headerLeft}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
+          </Pressable>
+          <Avatar 
+            size="sm" 
+            name={name || otherUserProfile?.name || 'User'} 
+            imageUrl={otherUserProfile?.profilePhotoUrl} 
+          />
+        </View>
         <View style={styles.headerTitleContainer}>
-          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>{name || 'Chat'}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text.primary }]}>{name || otherUserProfile?.name || 'Chat'}</Text>
           {/* Banner text for context */}
           {rideInfo ? (
             <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>{rideInfo}</Text>
@@ -217,47 +233,42 @@ export default function ChatScreen(): React.JSX.Element {
         </ImageBackground>
       )}
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 60 : 0}
-      >
-        <View style={[styles.inputContainer, { 
-          backgroundColor: isDark ? colors.background.card : '#FFF',
-          borderTopColor: colors.border.default,
-          paddingBottom: Math.max(insets.bottom, spacing.md)
-        }]}>
-          <TextInput
-            style={[styles.input, { 
-              color: colors.text.primary,
-              backgroundColor: isDark ? colors.background.primary : '#F0F2F5',
-              borderColor: colors.border.default
-            }]}
-            placeholder={isBlocked ? "Cannot send messages" : "Type a message..."}
-            placeholderTextColor={colors.text.placeholder}
-            value={messageText}
-            onChangeText={setMessageText}
-            multiline
-            maxLength={500}
-            editable={!isBlocked}
-          />
-          <Pressable 
-            style={[styles.sendButton, { 
-              backgroundColor: messageText.trim() && !isBlocked ? brandColors.electricViolet : colors.background.subtle 
-            }]}
-            onPress={handleSend}
-            disabled={!messageText.trim() || isBlocked}
-          >
-            <Ionicons name="send" size={18} color={messageText.trim() && !isBlocked ? '#FFF' : colors.text.placeholder} />
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+      <View style={[styles.inputContainer, { 
+        backgroundColor: isDark ? colors.background.card : '#FFF',
+        borderTopColor: colors.border.default,
+        paddingBottom: Math.max(insets.bottom, spacing.md)
+      }]}>
+        <TextInput
+          style={[styles.input, { 
+            color: colors.text.primary,
+            backgroundColor: isDark ? colors.background.primary : '#F0F2F5',
+            borderColor: colors.border.default
+          }]}
+          placeholder={isBlocked ? "Cannot send messages" : "Type a message..."}
+          placeholderTextColor={colors.text.placeholder}
+          value={messageText}
+          onChangeText={setMessageText}
+          multiline
+          maxLength={500}
+          editable={!isBlocked}
+        />
+        <Pressable 
+          style={[styles.sendButton, { 
+            backgroundColor: messageText.trim() && !isBlocked ? brandColors.electricViolet : colors.background.subtle 
+          }]}
+          onPress={handleSend}
+          disabled={!messageText.trim() || isBlocked}
+        >
+          <Ionicons name="send" size={18} color={messageText.trim() && !isBlocked ? '#FFF' : colors.text.placeholder} />
+        </Pressable>
+      </View>
 
       <CustomActionSheet
         visible={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         options={actionOptions}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -273,8 +284,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   backButton: {
     padding: spacing.xs,
+    marginRight: spacing.xs,
   },
   headerTitleContainer: {
     flex: 1,

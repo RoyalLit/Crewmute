@@ -2,6 +2,8 @@
 
 This directory contains API endpoint reference documentation for Crewmute.
 
+All REST endpoints are documented in detail in the project's [ARCHITECTURE.md](../../ARCHITECTURE.md#4-api-endpoints) (Section 4).
+
 ## Structure
 
 Each feature's endpoints are documented in their own file:

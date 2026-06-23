@@ -1,0 +1,31 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          cd backend
+          docker build -t crewmute-backend .
+
+      # Note: Add steps here to push the image to a container registry
+      # and deploy to your chosen hosting provider (e.g., Render, AWS, Railway)
+      # 
+      # Example for Railway:
+      # - name: Install Railway CLI
+      #   run: npm i -g @railway/cli
+      # - name: Deploy
+      #   run: railway up
+      #   env:
+      #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

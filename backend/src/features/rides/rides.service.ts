@@ -26,13 +26,21 @@ export class RidesService {
       availableSeats: ride.availableSeats,
       farePerSeat: ride.farePerSeat,
       cabType: ride.cabType,
+      genderPreference: ride.genderPreference,
       status: ride.status,
       createdAt: ride.createdAt,
     };
   }
 
   async createRide(posterId: string, data: CreateRideRequestDTO): Promise<RideResponseDTO> {
-    const ride = await ridesRepository.createRide(posterId, data);
+    const poster = await usersRepository.findById(posterId);
+    if (!poster) throw new NotFoundError('User', posterId);
+
+    const ride = await ridesRepository.createRide(posterId, {
+      ...data,
+      posterGender: poster.gender,
+      genderPreference: data.genderPreference || 'ANY',
+    } as any);
     return this.formatRide(ride);
   }
 
@@ -56,6 +64,17 @@ export class RidesService {
   }
 
   async browseRides(query: RideFilterQuery): Promise<PaginatedResult<RideResponseDTO>> {
+    if (query.requesterId) {
+      try {
+        const requester = await usersRepository.findById(query.requesterId);
+        if (requester?.gender) {
+          query.requesterGender = requester.gender;
+        }
+      } catch (error) {
+        logger.warn({ error }, 'Failed to fetch requester for gender filtering');
+      }
+    }
+
     const result = await ridesRepository.findRides(query);
 
     // Batch-fetch all unique poster profiles (fixes N+1)
@@ -75,8 +94,8 @@ export class RidesService {
     };
   }
 
-  async getMyRides(userId: string, page = 1, pageSize = 20): Promise<PaginatedResult<RideResponseDTO>> {
-    const result = await ridesRepository.findRidesByPoster(userId, page, pageSize);
+  async getMyRides(userId: string, page = 1, pageSize = 20, status?: string): Promise<PaginatedResult<RideResponseDTO>> {
+    const result = await ridesRepository.findRidesByPoster(userId, page, pageSize, status);
 
     const uniquePosterIds = [...new Set(result.data.map(r => r.posterId.toString()))];
     const posters = await usersRepository.findByIds(uniquePosterIds);

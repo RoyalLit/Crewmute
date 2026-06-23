@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
-import { spacing, brandColors } from '../design/tokens';
-import { getDerivedRideStatus, formatDate } from '../utils/rideUtils';
+import { spacing, brandColors, WOMEN_ONLY_COLORS } from '../design/tokens';
+import { getDerivedRideStatus, formatDate, parseLocation } from '../utils/rideUtils';
 import { Avatar } from './Avatar';
 
 interface TicketRideCardProps {
@@ -43,27 +43,41 @@ export function TicketRideCard({ ride, requestStatus }: TicketRideCardProps) {
       
       {/* Top Ticket Portion */}
       <View style={[styles.ticketTop, { backgroundColor: colors.background.card, borderColor }]}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.dateText, { color: colors.text.secondary }]}>
+        <View style={[styles.headerRow, { flexWrap: 'wrap', gap: 8 }]}>
+          <Text style={[styles.dateText, { color: colors.text.secondary, flexShrink: 1 }]}>
             {formatDate(ride.departureDate || ride.date)} • {ride.departureTime || ride.time} {ride.arrivalTime ? `- ${ride.arrivalTime}` : ''}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>
-              {getStatusText()}
-            </Text>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            {ride.genderPreference === 'SAME_GENDER' && (
+              <View style={{ backgroundColor: isDark ? 'rgba(255, 105, 180, 0.15)' : 'rgba(255, 105, 180, 0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="flower-outline" size={12} color={isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text} />
+                <Text style={{ fontSize: 10, fontFamily: 'PlusJakartaSans-700Bold', color: isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text }}>WOMEN ONLY</Text>
+              </View>
+            )}
+            <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
+              <Text style={[styles.statusText, { color: statusColor }]}>
+                {getStatusText()}
+              </Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.routeContainer}>
-          <View style={styles.routeCol}>
+          <View style={[styles.routeCol, { alignItems: 'flex-start' }]}>
             <Text 
               style={[styles.cityText, { color: colors.text.primary }]}
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {ride.fromCity || ride.from}
+              {parseLocation(ride.fromCity || ride.from).city}
             </Text>
-            <Text style={[styles.timeText, { color: colors.text.secondary }]}>Departure</Text>
+            {parseLocation(ride.fromCity || ride.from).state ? (
+              <Text style={[styles.timeText, { color: colors.text.secondary }]} numberOfLines={1}>
+                {parseLocation(ride.fromCity || ride.from).state}
+              </Text>
+            ) : (
+              <Text style={[styles.timeText, { color: colors.text.secondary }]}>Departure</Text>
+            )}
           </View>
           <View style={styles.routeArrow}>
             <Ionicons name="arrow-forward" size={24} color={colors.text.placeholder} />
@@ -74,9 +88,15 @@ export function TicketRideCard({ ride, requestStatus }: TicketRideCardProps) {
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {ride.toCity || ride.to}
+              {parseLocation(ride.toCity || ride.to).city}
             </Text>
-            <Text style={[styles.timeText, { color: colors.text.secondary }]}>Arrival</Text>
+            {parseLocation(ride.toCity || ride.to).state ? (
+              <Text style={[styles.timeText, { color: colors.text.secondary }]} numberOfLines={1}>
+                {parseLocation(ride.toCity || ride.to).state}
+              </Text>
+            ) : (
+              <Text style={[styles.timeText, { color: colors.text.secondary }]}>Arrival</Text>
+            )}
           </View>
         </View>
       </View>

@@ -14,6 +14,15 @@ export class UsersController {
     }
   }
 
+  async getStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const stats = await usersService.getStats(req.user!.userId);
+      res.status(200).json(successResponse(stats));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getPublicProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
@@ -55,6 +64,28 @@ export class UsersController {
       const { pushToken } = req.body;
       const user = await usersService.updatePushToken(req.user!.userId, pushToken);
       res.status(200).json(successResponse(user));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createReview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id: revieweeId } = req.params;
+      const review = await usersService.createReview(req.user!.userId, revieweeId, req.body);
+      res.status(201).json(successResponse(review));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getReviews(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id: userId } = req.params;
+      const page = parseInt(req.query.page as string, 10) || 1;
+      const pageSize = parseInt(req.query.pageSize as string, 10) || 20;
+      const reviews = await usersService.getReviews(userId, page, pageSize);
+      res.status(200).json(successResponse(reviews));
     } catch (error) {
       next(error);
     }

@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: crewmute_dev
+  
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongodb:27017/crewmute_dev
+      - ACCESS_TOKEN_SECRET=dev-access-token-secret
+      - REFRESH_TOKEN_SECRET=dev-refresh-token-secret
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:

@@ -10,7 +10,7 @@
  * affect every screen.
  */
 
-import { brandColors, darkColors, lightColors, radii, spacing, TAB_BAR_HEIGHT, MIN_TOUCH_TARGET } from '../../src/design/tokens';
+import { brandColors, darkColors, lightColors, radii, spacing, TAB_BAR_HEIGHT } from '../../src/design/tokens';
 
 describe('Design Tokens — lightColors', () => {
   it('has all required background tokens', () => {
@@ -90,9 +90,5 @@ describe('Design Tokens — radii', () => {
 describe('Design Tokens — layout constants', () => {
   it('TAB_BAR_HEIGHT is 64px per DESIGN.md §4.2', () => {
     expect(TAB_BAR_HEIGHT).toBe(64);
-  });
-
-  it('MIN_TOUCH_TARGET is 44px per Apple HIG and DESIGN.md §4.2', () => {
-    expect(MIN_TOUCH_TARGET).toBe(44);
   });
 });

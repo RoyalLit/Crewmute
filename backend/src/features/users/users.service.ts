@@ -1,8 +1,12 @@
-import { NotFoundError, AppError } from '../../shared/errors';
+import { ReviewModel } from '../../db/models/Review';
+import { RideModel } from '../../db/models/Ride';
+import { RideRequestModel } from '../../db/models/RideRequest';
+import { UserModel } from '../../db/models/User';
+import { NotFoundError, AppError, ConflictError } from '../../shared/errors';
 import type { UserResponseDTO } from '../auth/auth.types';
 
 import { usersRepository } from './users.repository';
-import type { UpdateProfileRequestDTO, PublicProfileResponseDTO } from './users.types';
+import type { UpdateProfileRequestDTO, PublicProfileResponseDTO, CreateReviewRequestDTO, ReviewResponseDTO } from './users.types';
 
 export class UsersService {
   private formatUser(user: any): UserResponseDTO {
@@ -13,6 +17,10 @@ export class UsersService {
       college: user.college,
       homeCity: user.homeCity,
       profilePhotoUrl: user.profilePhotoUrl,
+      gender: user.gender,
+      isCollegeVerified: user.isCollegeVerified,
+      averageRating: user.averageRating,
+      totalReviews: user.totalReviews,
       isEmailVerified: user.isEmailVerified,
       status: user.status,
       createdAt: user.createdAt,
@@ -26,6 +34,10 @@ export class UsersService {
       college: user.college,
       homeCity: user.homeCity,
       profilePhotoUrl: user.profilePhotoUrl,
+      gender: user.gender,
+      isCollegeVerified: user.isCollegeVerified,
+      averageRating: user.averageRating,
+      totalReviews: user.totalReviews,
     };
   }
 
@@ -78,6 +90,102 @@ export class UsersService {
       throw new AppError('INTERNAL_ERROR', 'Failed to upload student ID', 500);
     }
     return this.formatUser(updatedUser);
+  }
+
+  async createReview(reviewerId: string, revieweeId: string, data: CreateReviewRequestDTO): Promise<ReviewResponseDTO> {
+    if (reviewerId === revieweeId) {
+      throw new ConflictError('Cannot review yourself');
+    }
+
+    const ride = await RideModel.findById(data.rideId);
+    if (!ride) throw new NotFoundError('Ride', data.rideId);
+
+    // Verify reviewer and reviewee were part of the ride (one is poster, one is accepted requester)
+    const isPosterReviewer = ride.posterId.toString() === reviewerId;
+    const isPosterReviewee = ride.posterId.toString() === revieweeId;
+    
+    if (!isPosterReviewer && !isPosterReviewee) {
+      // Neither is the poster, they must be co-passengers. We allow co-passenger reviews too.
+    }
+
+    const revieweeExists = await UserModel.exists({ _id: revieweeId });
+    if (!revieweeExists) throw new NotFoundError('User', revieweeId);
+
+    const existingReview = await ReviewModel.findOne({ reviewerId, revieweeId, rideId: data.rideId });
+    if (existingReview) {
+      throw new ConflictError('You have already reviewed this user for this ride');
+    }
+
+    const review = await ReviewModel.create({
+      reviewerId,
+      revieweeId,
+      rideId: data.rideId,
+      rating: data.rating,
+      comment: data.comment,
+    });
+
+    // Recalculate average rating
+    const allReviews = await ReviewModel.find({ revieweeId });
+    const totalReviews = allReviews.length;
+    const averageRating = totalReviews > 0 ? allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews : 0;
+
+    await UserModel.findByIdAndUpdate(revieweeId, { totalReviews, averageRating });
+
+    return {
+      id: review._id.toString(),
+      reviewerId: review.reviewerId.toString(),
+      revieweeId: review.revieweeId.toString(),
+      rideId: review.rideId.toString(),
+      rating: review.rating,
+      comment: review.comment,
+      createdAt: review.createdAt,
+    };
+  }
+
+  async getReviews(userId: string, page = 1, pageSize = 20): Promise<{ data: ReviewResponseDTO[], total: number }> {
+    const skip = (page - 1) * pageSize;
+    
+    const [reviews, total] = await Promise.all([
+      ReviewModel.find({ revieweeId: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .populate('reviewerId', 'name college homeCity profilePhotoUrl gender isCollegeVerified averageRating totalReviews')
+        .lean(),
+      ReviewModel.countDocuments({ revieweeId: userId })
+    ]);
+
+    const data = reviews.map((r: any) => ({
+      id: r._id.toString(),
+      reviewerId: r.reviewerId._id?.toString() || r.reviewerId.toString(),
+      reviewer: r.reviewerId._id ? {
+        id: r.reviewerId._id.toString(),
+        name: r.reviewerId.name,
+        college: r.reviewerId.college,
+        homeCity: r.reviewerId.homeCity,
+        profilePhotoUrl: r.reviewerId.profilePhotoUrl,
+        gender: r.reviewerId.gender,
+        isCollegeVerified: r.reviewerId.isCollegeVerified,
+        averageRating: r.reviewerId.averageRating,
+        totalReviews: r.reviewerId.totalReviews,
+      } : undefined,
+      revieweeId: r.revieweeId.toString(),
+      rideId: r.rideId.toString(),
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+    }));
+
+    return { data, total };
+  }
+
+  async getStats(userId: string): Promise<{ ridesGiven: number; ridesTaken: number }> {
+    const [ridesGiven, ridesTaken] = await Promise.all([
+      RideModel.countDocuments({ posterId: userId, status: 'expired' }),
+      RideRequestModel.countDocuments({ requesterId: userId, status: 'accepted' }),
+    ]);
+
+    return { ridesGiven, ridesTaken };
   }
 }
 

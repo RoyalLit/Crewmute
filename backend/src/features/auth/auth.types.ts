@@ -38,6 +38,10 @@ export interface UserResponseDTO {
   college?: string;
   homeCity?: string;
   profilePhotoUrl?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  isCollegeVerified: boolean;
+  averageRating: number;
+  totalReviews: number;
   isEmailVerified: boolean;
   status: string;
   createdAt: Date;
@@ -51,4 +55,5 @@ export interface AuthResponseDTO {
 export interface JwtPayload {
   userId: string;
   tokenVersion: number;
+  jti?: string;
 }

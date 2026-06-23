@@ -10,9 +10,10 @@ import { TAB_BAR_HEIGHT, spacing, brandColors } from '../../src/design/tokens';
 
 import { useAuthStore } from '../../src/store/authStore';
 import { useLogoutMutation } from '../../src/api/authHooks';
-import { useMyRidesQuery } from '../../src/api/ridesHooks';
-import { useMyRequestsQuery } from '../../src/api/requestsHooks';
+import { useMyStatsQuery } from '../../src/api/usersHooks';
 import { Avatar } from '../../src/components/Avatar';
+import { VerifiedBadge } from '../../src/components/VerifiedBadge';
+import { StarRating } from '../../src/components/StarRating';
 import { Alert } from '../../src/components/GlobalAlert';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -29,12 +30,10 @@ export default function ProfileScreen(): React.JSX.Element {
   const isLight = preference === 'light';
   const router = useRouter();
 
-  const { data: myRidesData } = useMyRidesQuery();
-  const { data: myRequestsData } = useMyRequestsQuery();
+  const { data: myStatsData } = useMyStatsQuery();
 
-  const postedCount = Array.isArray(myRidesData?.data) ? myRidesData.data.length : (myRidesData?.data?.data?.length || 0);
-  const myReqsArray = Array.isArray(myRequestsData?.data) ? myRequestsData.data : (myRequestsData?.data?.data || []);
-  const joinedCount = myReqsArray.filter((req: any) => req.status === 'accepted').length;
+  const postedCount = myStatsData?.data?.ridesGiven || 0;
+  const joinedCount = myStatsData?.data?.ridesTaken || 0;
 
   const handleLogout = async () => {
     try {
@@ -87,8 +86,19 @@ export default function ProfileScreen(): React.JSX.Element {
               isVerified={(user as any)?.isVerified || user?.isEmailVerified}
             />
           </View>
-          <Text style={[styles.name, { color: colors.text.primary }]}>{user?.name || 'John Doe'}</Text>
-          <Text style={[styles.college, { color: colors.text.secondary }]}>{user?.college || 'University'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <Text style={[styles.name, { color: colors.text.primary, marginBottom: 0 }]}>{user?.name || 'John Doe'}</Text>
+            <VerifiedBadge isVerified={(user as any)?.isVerified || user?.isCollegeVerified} size="medium" />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.lg }}>
+            <Text style={[styles.college, { color: colors.text.secondary, marginBottom: 0 }]}>{user?.college || 'University'}</Text>
+            {user?.averageRating !== undefined && (
+              <>
+                <Text style={{ color: colors.text.placeholder, fontSize: 10 }}>•</Text>
+                <StarRating rating={user.averageRating || 0} totalReviews={user.totalReviews || 0} size={14} />
+              </>
+            )}
+          </View>
           
           <View style={[styles.locationChip, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
             <Ionicons name="location" size={14} color={colors.text.secondary} />
@@ -109,13 +119,13 @@ export default function ProfileScreen(): React.JSX.Element {
         </View>
 
         {/* Verified Student Wide Tile */}
-        <View style={[bentoBox, styles.verifiedTile, { backgroundColor: isDark ? 'rgba(0, 200, 150, 0.1)' : '#E8F5F0', borderColor: isDark ? 'rgba(0, 200, 150, 0.2)' : 'transparent' }]}>
+        <View style={[bentoBox, styles.verifiedTile, { backgroundColor: isDark ? 'rgba(0, 200, 150, 0.15)' : 'rgba(0, 200, 150, 0.12)', borderColor: isDark ? 'rgba(0, 200, 150, 0.3)' : 'rgba(0, 200, 150, 0.2)' }]}>
           <View style={styles.verifiedIconContainer}>
             <Ionicons name="shield-checkmark" size={24} color={brandColors.mintGreen} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.verifiedTitle, { color: isDark ? colors.background.card : brandColors.brandNavy }]}>Verified Student</Text>
-            <Text style={[styles.verifiedSub, { color: isDark ? 'rgba(255,255,255,0.7)' : colors.text.secondary }]}>Active university email</Text>
+            <Text style={[styles.verifiedTitle, { color: isDark ? brandColors.mintGreen : brandColors.brandNavy }]}>Verified Student</Text>
+            <Text style={[styles.verifiedSub, { color: isDark ? 'rgba(255,255,255,0.8)' : colors.text.secondary }]}>Active university email</Text>
           </View>
         </View>
 

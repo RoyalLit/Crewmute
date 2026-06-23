@@ -17,7 +17,8 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.crewmute.app",
-      "deploymentTarget": "26.0"
+      "deploymentTarget": "26.0",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +26,8 @@
         "backgroundColor": "#0F0F1A"
       },
       "package": "com.crewmute.app",
-      "minSdkVersion": 26
+      "minSdkVersion": 26,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,7 +35,44 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      "@react-native-firebase/app",
+      "@react-native-firebase/crashlytics",
+      "@react-native-firebase/analytics",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "extraPods": [
+              {
+                "name": "FirebaseCoreInternal",
+                "modular_headers": true
+              },
+              {
+                "name": "FirebaseCrashlytics",
+                "modular_headers": true
+              },
+              {
+                "name": "FirebaseSessions",
+                "modular_headers": true
+              },
+              {
+                "name": "GoogleDataTransport",
+                "modular_headers": true
+              },
+              {
+                "name": "GoogleUtilities",
+                "modular_headers": true
+              },
+              {
+                "name": "nanopb",
+                "modular_headers": true
+              }
+            ]
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "scheme": "crewmute",
     "extra": {

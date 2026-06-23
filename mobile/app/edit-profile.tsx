@@ -22,6 +22,7 @@ export default function EditProfileScreen() {
   const [name, setName] = useState(user?.name || '');
   const [homeCity, setHomeCity] = useState(user?.homeCity || '');
   const [college, setCollege] = useState(user?.college || '');
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | undefined>(user?.gender);
   
   const updateProfileMutation = useUpdateProfileMutation();
   const updateAvatarMutation = useUpdateAvatarMutation();
@@ -37,6 +38,7 @@ export default function EditProfileScreen() {
         name: name.trim(),
         homeCity: homeCity.trim(),
         college: college.trim(),
+        gender,
       });
       Alert.alert('Success', 'Profile updated successfully!');
       router.back();
@@ -155,8 +157,33 @@ export default function EditProfileScreen() {
                 placeholderTextColor={colors.text.placeholder}
                 value={college}
                 onChangeText={setCollege}
-                placeholder="Your college name"
+                placeholder="Where do you study?"
               />
+            </View>
+
+            <View style={[styles.inputGroup, { zIndex: 1 }]}>
+              <Text style={[styles.label, { color: colors.text.secondary }]}>Gender</Text>
+              <View style={styles.genderContainer}>
+                {(['MALE', 'FEMALE', 'OTHER'] as const).map((option) => (
+                  <Pressable
+                    key={option}
+                    onPress={() => setGender(option)}
+                    style={[
+                      styles.genderOption,
+                      { borderColor: colors.border.default, backgroundColor: colors.background.card },
+                      gender === option && { borderColor: brandColors.mintGreen, backgroundColor: isDark ? 'rgba(0, 255, 163, 0.1)' : 'rgba(0, 204, 136, 0.1)' }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.genderText,
+                      { color: colors.text.secondary },
+                      gender === option && { color: brandColors.mintGreen, fontWeight: '600' }
+                    ]}>
+                      {option.charAt(0) + option.slice(1).toLowerCase()}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
             <Pressable 
@@ -256,5 +283,21 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-700Bold',
     fontSize: 16,
     color: '#FFFFFF',
+  },
+  genderContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  genderOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  genderText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

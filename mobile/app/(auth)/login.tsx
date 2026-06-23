@@ -65,9 +65,9 @@ export default function LoginScreen() {
               onPress={() => {
                 router.replace('/(auth)');
               }} 
-              style={styles.backButton}
+              style={[styles.backButton, { backgroundColor: colors.background.subtle }]}
             >
-              <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+              <Ionicons name="arrow-back" size={20} color={colors.text.primary} />
             </Pressable>
             <Text style={[styles.title, { color: colors.text.primary }]}>Welcome back</Text>
           </View>
@@ -176,11 +176,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   backButton: {
-    minWidth: 44,
-    minHeight: 44,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
-    marginBottom: spacing.sm,
-    marginLeft: -8,
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   title: {
     fontFamily: 'PlusJakartaSans-800ExtraBold',

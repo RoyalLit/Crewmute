@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/design/theme';
 import { spacing, TAB_BAR_HEIGHT } from '../../src/design/tokens';
@@ -20,6 +20,7 @@ export default function PostScreen(): React.JSX.Element {
   const [seats, setSeats] = useState('3');
   const [fare, setFare] = useState('');
   const [cabType, setCabType] = useState<'Uber Go' | 'Uber XL' | 'Ola Mini' | 'Ola Prime Sedan' | 'Other'>('Uber Go');
+  const [sameGenderOnly, setSameGenderOnly] = useState(false);
 
   const createRideMutation = useCreateRideMutation();
   const loading = createRideMutation.isPending;
@@ -54,6 +55,7 @@ export default function PostScreen(): React.JSX.Element {
         totalSeats: parseInt(seats, 10),
         farePerSeat: parseInt(fare, 10),
         cabType,
+        genderPreference: sameGenderOnly ? 'SAME_GENDER' : 'ANY',
       });
 
       Alert.alert('Success', 'Ride posted successfully!');
@@ -65,6 +67,7 @@ export default function PostScreen(): React.JSX.Element {
       setTime('');
       setSeats('3');
       setFare('');
+      setSameGenderOnly(false);
       
       // Navigate to Home Feed
       router.push('/(tabs)');
@@ -186,6 +189,18 @@ export default function PostScreen(): React.JSX.Element {
                   />
                 </View>
               </View>
+            </View>
+
+            <View style={[styles.inputGroup, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm }]}>
+              <View>
+                <Text style={[styles.label, { color: colors.text.primary }]}>Same Gender Only</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: 12, marginTop: 2 }}>Only show your ride to users of the same gender</Text>
+              </View>
+              <Switch
+                value={sameGenderOnly}
+                onValueChange={setSameGenderOnly}
+                trackColor={{ false: colors.border.default, true: colors.interactive.primary }}
+              />
             </View>
 
             <View style={[styles.divider, { backgroundColor: colors.background.card }]} />

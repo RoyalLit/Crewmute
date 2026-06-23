@@ -3,6 +3,7 @@ import { Schema, model } from 'mongoose';
 
 export interface IRide extends Document {
   posterId: Types.ObjectId;
+  posterGender?: 'MALE' | 'FEMALE' | 'OTHER';
   fromCity: string;
   toCity: string;
   departureDate: string; // ISO String (YYYY-MM-DD)
@@ -13,6 +14,7 @@ export interface IRide extends Document {
   availableSeats: number;
   farePerSeat: number;
   cabType: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
+  genderPreference: 'ANY' | 'SAME_GENDER';
   status: 'active' | 'cancelled' | 'expired' | 'full';
   createdAt: Date;
   updatedAt: Date;
@@ -21,6 +23,7 @@ export interface IRide extends Document {
 const rideSchema = new Schema<IRide>(
   {
     posterId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    posterGender: { type: String, enum: ['MALE', 'FEMALE', 'OTHER'] },
     fromCity: { type: String, required: true, trim: true },
     toCity: { type: String, required: true, trim: true },
     departureDate: { type: String, required: true, index: true },
@@ -34,6 +37,12 @@ const rideSchema = new Schema<IRide>(
       type: String,
       required: true,
       enum: ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Any', 'Other'],
+    },
+    genderPreference: {
+      type: String,
+      required: true,
+      enum: ['ANY', 'SAME_GENDER'],
+      default: 'ANY',
     },
     status: {
       type: String,

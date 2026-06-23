@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
+import analytics from '@react-native-firebase/analytics';
 
 export interface RequestPayload {
   rideId: string;
@@ -13,6 +14,10 @@ export function useCreateRequestMutation() {
       return await apiClient.post('/requests', data);
     },
     onSuccess: (_, variables) => {
+      analytics().logEvent('ride_requested', {
+        rideId: variables.rideId
+      });
+
       queryClient.invalidateQueries({ queryKey: ['myRequests'] });
       queryClient.invalidateQueries({ queryKey: ['ride', variables.rideId] });
       // Invalidate rides so seat counts might update if needed

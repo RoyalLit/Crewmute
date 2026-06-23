@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
+import type {
+  SharedValue} from 'react-native-reanimated';
 import Animated, {
   useSharedValue,
   withTiming,
   withDelay,
   withSpring,
   withSequence,
-  useAnimatedReaction,
-  SharedValue,
+  useAnimatedReaction
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { tokens, StaggeredText } from './shared';

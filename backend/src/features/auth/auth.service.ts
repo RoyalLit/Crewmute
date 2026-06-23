@@ -25,7 +25,7 @@ export class AuthService {
    * Generates Access and Refresh Tokens, stores refresh token hash.
    */
   private async generateTokens(userId: string, tokenVersion: number): Promise<AuthTokens> {
-    const payload: JwtPayload = { userId, tokenVersion };
+    const payload: JwtPayload = { userId, tokenVersion, jti: crypto.randomUUID() };
 
     const accessToken = jwt.sign(payload, env.accessTokenSecret, {
       expiresIn: TOKEN.ACCESS_EXPIRY,
@@ -53,6 +53,10 @@ export class AuthService {
       college: user.college,
       homeCity: user.homeCity,
       profilePhotoUrl: user.profilePhotoUrl,
+      gender: user.gender,
+      isCollegeVerified: user.isCollegeVerified,
+      averageRating: user.averageRating,
+      totalReviews: user.totalReviews,
       isEmailVerified: user.isEmailVerified,
       status: user.status,
       createdAt: user.createdAt,
@@ -75,12 +79,12 @@ export class AuthService {
       }
     }
 
-    const hashedPassword = data.password ? await bcrypt.hash(data.password, 12) : undefined;
+    const hashedPassword = data.password ? await bcrypt.hash(data.password, AUTH_CONST.BCRYPT_SALT_ROUNDS) : undefined;
     
     // Generate a 6-digit OTP and hash it before storing
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otpCode, AUTH_CONST.BCRYPT_SALT_ROUNDS);
-    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins validity
+    const otpExpiresAt = new Date(Date.now() + TOKEN.OTP_EXPIRY_MINUTES * 60 * 1000); // 15 mins validity
 
     const newUser = await authRepository.createUser({
       ...data,
@@ -122,7 +126,7 @@ export class AuthService {
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otpCode, AUTH_CONST.BCRYPT_SALT_ROUNDS);
-    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const otpExpiresAt = new Date(Date.now() + TOKEN.OTP_EXPIRY_MINUTES * 60 * 1000);
 
     await authRepository.updateUser((user as any)._id.toString(), {
       otpCode: hashedOtp,
@@ -153,7 +157,7 @@ export class AuthService {
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedOtp = await bcrypt.hash(otpCode, AUTH_CONST.BCRYPT_SALT_ROUNDS);
-    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const otpExpiresAt = new Date(Date.now() + TOKEN.OTP_EXPIRY_MINUTES * 60 * 1000);
 
     await authRepository.updateUser((user as any)._id.toString(), {
       otpCode: hashedOtp,
@@ -178,10 +182,10 @@ export class AuthService {
     const user = await authRepository.findByEmail(data.email);
     
     if (!user) {
-      throw new UnauthorizedError('Invalid email or OTP.');
+      return { message: 'If an account exists with this email, a password reset has been processed.' };
     }
 
-    const isMagicOtp = env.nodeEnv === 'development' && data.otp === '123456';
+    const isMagicOtp = env.magicOtpEnabled && data.otp === '123456';
 
     const isOtpValid = user.otpCode
       ? await bcrypt.compare(data.otp, user.otpCode)
@@ -195,7 +199,7 @@ export class AuthService {
       throw new AppError('BAD_REQUEST', 'New password is required', 400);
     }
 
-    const hashedPassword = await bcrypt.hash(data.newPassword, 12);
+    const hashedPassword = await bcrypt.hash(data.newPassword, AUTH_CONST.BCRYPT_SALT_ROUNDS);
 
     // Update password, clear OTP, and increment token version to log out all devices
     await authRepository.updateUser((user as any)._id.toString(), {
@@ -224,7 +228,7 @@ export class AuthService {
       throw new ConflictError('Email is already verified.');
     }
 
-    const isMagicOtp = env.nodeEnv === 'development' && data.otp === '123456';
+    const isMagicOtp = env.magicOtpEnabled && data.otp === '123456';
 
     const isOtpValid = user.otpCode
       ? await bcrypt.compare(data.otp, user.otpCode)
@@ -234,12 +238,15 @@ export class AuthService {
       throw new UnauthorizedError('Invalid or expired OTP.');
     }
 
+    const isCollegeEmail = user.email.endsWith('.edu') || user.email.endsWith('.edu.in') || user.email.endsWith('.ac.in');
+
     // Mark as verified and clear OTP
     const updatedUser = await authRepository.updateUser((user as any)._id.toString(), {
       isEmailVerified: true,
+      isCollegeVerified: isCollegeEmail,
       otpCode: undefined,
       otpExpiresAt: undefined,
-    });
+    } as any);
 
     if (!updatedUser) {
       throw new AppError('INTERNAL_ERROR', 'Failed to update user after OTP verification', 500);

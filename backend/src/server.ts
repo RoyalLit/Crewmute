@@ -7,6 +7,7 @@
  *   3. Connect to MongoDB
  *   4. Start the HTTP server
  *   5. Register graceful shutdown handlers
+ *   6. Initialize Sentry error tracking (H13)
  *
  * This file is intentionally thin. All application setup is in app.ts.
  */
@@ -21,7 +22,18 @@ import { startRideExpiryCron } from './features/rides/rides.cron';
 import logger from './shared/logger';
 
 async function start(): Promise<void> {
-  // Log startup configuration (no secrets) logger.info(
+  // Initialize Sentry before any other services
+  if (env.sentryDsn) {
+    const Sentry = await import('@sentry/node');
+    Sentry.init({
+      dsn: env.sentryDsn,
+      environment: env.nodeEnv,
+      tracesSampleRate: 0.2,
+    });
+  }
+
+  // Log startup configuration (no secrets)
+  logger.info(
     {
       nodeEnv: env.nodeEnv,
       port: env.port,
@@ -42,7 +54,10 @@ async function start(): Promise<void> {
   initializeSockets(server);
 
   // Start ride expiry cron job per ARCHITECTURE.md §7.3
-  startRideExpiryCron();
+  // Only runs on instances with CRON_ENABLED=true (singleton guard for multi-instance deployments)
+  if (env.cronEnabled) {
+    startRideExpiryCron();
+  }
 
   // Register HTTP server for graceful shutdown
   setHttpServer(server);

@@ -3,6 +3,8 @@ import { useAuthStore } from '../store/authStore';
 import { storage } from '../lib/storage';
 import { useUpdatePushTokenMutation } from '../api/authHooks';
 import { registerForPushNotificationsAsync } from '../utils/notifications';
+import crashlytics from '@react-native-firebase/crashlytics';
+import analytics from '@react-native-firebase/analytics';
 
 interface Session {
   accessToken: string | null;
@@ -28,13 +30,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     storage.getAccessToken().then(setAccessToken).catch(() => setAccessToken(null));
 
-    // Register push token when user is logged in
+    // Register push token and crashlytics/analytics when user is logged in
     if (user) {
       registerForPushNotificationsAsync().then((token) => {
         if (token) {
           updatePushToken({ pushToken: token });
         }
       });
+      
+      // Set Crashlytics User ID
+      crashlytics().setUserId(user.id);
+      
+      // Log Analytics Login Event
+      analytics().logLogin({
+        method: 'email'
+      });
+    } else {
+      // Clear crashlytics user when logged out
+      crashlytics().setUserId('');
     }
   }, [user]);
 

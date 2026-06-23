@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Dimensions, Pressable, View, Text } from 'react-native';
+import type {
+  SharedValue} from 'react-native-reanimated';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,7 +10,6 @@ import Animated, {
   interpolate,
   Extrapolate,
   useAnimatedReaction,
-  SharedValue,
   runOnJS,
 } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';

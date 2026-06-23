@@ -23,7 +23,7 @@ export class RidesRepository {
   }
 
   async findRides(query: RideFilterQuery): Promise<PaginatedResult<IRide>> {
-    const { page = 1, pageSize = 20, fromCity, toCity, date } = query;
+    const { page = 1, pageSize = 20, fromCity, toCity, date, requesterGender } = query;
     const skip = (page - 1) * pageSize;
 
     const filter: FilterQuery<IRide> = { status: 'active', availableSeats: { $gt: 0 } };
@@ -54,6 +54,19 @@ export class RidesRepository {
       filter.posterId = { $ne: query.excludePosterId };
     }
 
+    // Gender preference filtering
+    if (requesterGender) {
+      conditions.push({
+        $or: [
+          { genderPreference: 'ANY' },
+          { genderPreference: 'SAME_GENDER', posterGender: requesterGender }
+        ]
+      });
+    } else {
+      // If requester has no gender set, they can only see ANY gender rides
+      filter.genderPreference = 'ANY';
+    }
+
     const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
     if (fromCity) {
@@ -74,7 +87,7 @@ export class RidesRepository {
 
     const [data, total] = await Promise.all([
       RideModel.find(filter)
-        .select('posterId fromCity toCity departureDate departureTime arrivalTime stops totalSeats availableSeats farePerSeat cabType status')
+        .select('posterId posterGender genderPreference fromCity toCity departureDate departureTime arrivalTime stops totalSeats availableSeats farePerSeat cabType status')
         .sort({ departureDate: 1, departureTime: 1 }).skip(skip).limit(pageSize).lean(),
       RideModel.countDocuments(filter),
     ]);
@@ -87,12 +100,15 @@ export class RidesRepository {
     };
   }
 
-  async findRidesByPoster(posterId: string, page = 1, pageSize = 20): Promise<PaginatedResult<IRide>> {
+  async findRidesByPoster(posterId: string, page = 1, pageSize = 20, status?: string): Promise<PaginatedResult<IRide>> {
     const skip = (page - 1) * pageSize;
-    const filter = { posterId };
+    const filter: FilterQuery<IRide> = { posterId };
+    if (status) {
+      filter.status = status;
+    }
     const [data, total] = await Promise.all([
       RideModel.find(filter)
-        .select('posterId fromCity toCity departureDate departureTime arrivalTime stops totalSeats availableSeats farePerSeat cabType status createdAt')
+        .select('posterId posterGender genderPreference fromCity toCity departureDate departureTime arrivalTime stops totalSeats availableSeats farePerSeat cabType status createdAt')
         .sort({ departureDate: -1 }).skip(skip).limit(pageSize).lean(),
       RideModel.countDocuments(filter),
     ]);
@@ -102,6 +118,11 @@ export class RidesRepository {
   async updateRide(id: string, updates: Partial<IRide>, options?: { session?: ClientSession }): Promise<IRide | null> {
     const ride = await RideModel.findByIdAndUpdate(id, updates, { new: true, session: options?.session }).lean();
     return ride ? (ride as unknown as IRide) : null;
+  }
+
+  async findByIds(ids: string[]): Promise<IRide[]> {
+    const rides = await RideModel.find({ _id: { $in: ids } }).lean();
+    return rides as unknown as IRide[];
   }
 
   async deleteRide(id: string): Promise<void> {

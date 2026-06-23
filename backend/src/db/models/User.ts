@@ -10,6 +10,11 @@ export interface IUser extends Document {
   profilePhotoUrl?: string;
   studentIdPhotoUrl?: string;
   
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  isCollegeVerified: boolean;
+  averageRating: number;
+  totalReviews: number;
+  
   isEmailVerified: boolean;
   status: 'pending_id' | 'active' | 'suspended';
   
@@ -55,6 +60,25 @@ const UserSchema = new Schema<IUser>(
     },
     studentIdPhotoUrl: { 
       type: String 
+    },
+    gender: {
+      type: String,
+      enum: ['MALE', 'FEMALE', 'OTHER']
+    },
+    isCollegeVerified: {
+      type: Boolean,
+      required: true,
+      default: false
+    },
+    averageRating: {
+      type: Number,
+      required: true,
+      default: 0
+    },
+    totalReviews: {
+      type: Number,
+      required: true,
+      default: 0
     },
     isEmailVerified: { 
       type: Boolean, 

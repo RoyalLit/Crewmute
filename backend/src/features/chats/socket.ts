@@ -10,6 +10,11 @@ import env from '../../config/env';
 import { MessageModel } from '../../db/models/Message';
 import logger from '../../shared/logger';
 import type { JwtPayload } from '../auth/auth.types';
+import { notificationsService } from '../notifications/notifications.service';
+import { requestsRepository } from '../requests/requests.repository';
+import { ridesRepository } from '../rides/rides.repository';
+import { safetyService } from '../safety/safety.service';
+import { usersRepository } from '../users/users.repository';
 
 let io: SocketIOServer;
 
@@ -57,9 +62,6 @@ export function initializeSockets(server: HttpServer): void {
           return;
         }
 
-        const { ridesRepository } = await import('../rides/rides.repository');
-        const { requestsRepository } = await import('../requests/requests.repository');
-
         const [ride, isPassenger] = await Promise.all([
           ridesRepository.findById(rideId),
           requestsRepository.isAcceptedPassenger(rideId, user.userId),
@@ -88,7 +90,6 @@ export function initializeSockets(server: HttpServer): void {
         }
 
         // Check if either user has blocked the other
-        const { safetyService } = await import('../safety/safety.service');
         const [isSenderBlocked, isReceiverBlocked] = await Promise.all([
           safetyService.checkIfBlocked(data.receiverId, user.userId), // Has the receiver blocked the sender?
           safetyService.checkIfBlocked(user.userId, data.receiverId)  // Has the sender blocked the receiver?
@@ -125,9 +126,6 @@ export function initializeSockets(server: HttpServer): void {
 
         // Notify receiver
         try {
-          const { usersRepository } = await import('../users/users.repository');
-          const { notificationsService } = await import('../notifications/notifications.service');
-          
           const [receiver, sender] = await Promise.all([
             usersRepository.findById(data.receiverId),
             usersRepository.findById(user.userId)

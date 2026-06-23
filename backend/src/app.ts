@@ -19,6 +19,8 @@
  *  10. Error handler (must be last — 4 arguments)
  */
 
+import * as Sentry from '@sentry/node';
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -40,6 +42,9 @@ export function createApp(): express.Application {
   // Helmet sets secure HTTP headers (XSS protection, content-type sniffing, etc.)
   // per ARCHITECTURE.md §10 security checklist.
   app.use(helmet());
+
+  // ── 1b. Compression (after security, before everything else) ────────────
+  app.use(compression());
 
   // ── 2. CORS ─────────────────────────────────────────────────────────────
   // Restricted to the mobile app origin in production.
@@ -97,7 +102,12 @@ export function createApp(): express.Application {
   // ── 10. 404 handler (after all routes) ───────────────────────────────────
   app.use(notFound);
 
-  // ── 11. Centralized error handler (must be last, 4 arguments) ───────────
+  // ── 11. Sentry error tracking (registers its own error handler) ──────────
+  if (env.sentryDsn) {
+    Sentry.setupExpressErrorHandler(app);
+  }
+
+  // ── 12. Centralized error handler (must be last, 4 arguments) ─────────────
   app.use(errorHandler);
 
   return app;

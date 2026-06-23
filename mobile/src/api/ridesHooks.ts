@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
+import analytics from '@react-native-firebase/analytics';
 
 export interface CreateRideData {
   fromCity: string;
@@ -9,6 +10,9 @@ export interface CreateRideData {
   totalSeats: number;
   farePerSeat: number;
   cabType: 'Uber Go' | 'Uber XL' | 'Ola Mini' | 'Ola Prime Sedan' | 'Other';
+  genderPreference?: 'ANY' | 'SAME_GENDER';
+  arrivalTime?: string;
+  stops?: string[];
 }
 
 export interface RideFilterData {
@@ -26,7 +30,15 @@ export function useCreateRideMutation() {
     mutationFn: async (data: CreateRideData) => {
       return await apiClient.post('/rides', data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Track analytics
+      analytics().logEvent('ride_posted', {
+        fromCity: variables.fromCity,
+        toCity: variables.toCity,
+        fare: variables.farePerSeat,
+        seats: variables.totalSeats
+      });
+
       // Invalidate relevant queries to refetch data
       queryClient.invalidateQueries({ queryKey: ['rides'] });
       queryClient.invalidateQueries({ queryKey: ['myRides'] });

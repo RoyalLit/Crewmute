@@ -18,7 +18,7 @@ export class RidesController {
     try {
       const query = req.query as any;
       if (req.user?.userId) {
-        query.excludePosterId = req.user.userId;
+        query.requesterId = req.user.userId;
       }
       const rides = await ridesService.browseRides(query);
       res.status(200).json(successResponse(rides));
@@ -31,7 +31,8 @@ export class RidesController {
     try {
       const page = parseInt(req.query.page as string, 10) || 1;
       const pageSize = parseInt(req.query.pageSize as string, 10) || 20;
-      const rides = await ridesService.getMyRides(req.user!.userId, page, pageSize);
+      const status = req.query.status as string | undefined;
+      const rides = await ridesService.getMyRides(req.user!.userId, page, pageSize, status);
       res.status(200).json(successResponse(rides));
     } catch (error) {
       next(error);

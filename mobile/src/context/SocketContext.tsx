@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import type { Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import env from '../config/env';
 import { useAuth } from './AuthContext'; // assuming we have useAuth
 
@@ -37,6 +38,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         token: session.accessToken,
       },
       transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     newSocket.on('connect', () => {

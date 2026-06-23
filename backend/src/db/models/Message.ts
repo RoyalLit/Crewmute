@@ -24,4 +24,7 @@ const messageSchema = new Schema<IMessage>(
   }
 );
 
+messageSchema.index({ rideId: 1, createdAt: -1 });
+messageSchema.index({ senderId: 1, receiverId: 1 });
+
 export const MessageModel = model<IMessage>('Message', messageSchema);

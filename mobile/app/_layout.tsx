@@ -2,10 +2,12 @@
  * Root Expo Router layout.
  *
  * Responsibilities (in order):
- *   1. Load Plus Jakarta Sans fonts (DESIGN.md §3.1)
- *   2. Provide QueryClientProvider (TanStack Query)
- *   3. Provide ThemeProvider (Zustand + Appearance)
- *   4. Auth guard: redirect to (auth) or (tabs) based on stored token
+ *   1. Initialize Sentry error tracking (H13)
+ *   2. Load Plus Jakarta Sans fonts (DESIGN.md §3.1)
+ *   3. Provide QueryClientProvider (TanStack Query)
+ *   4. Provide ThemeProvider (Zustand + Appearance)
+ *   5. Auth guard: redirect to (auth) or (tabs) based on stored token
+ *   6. Wire push notification deep linking (M13)
  *
  * Auth guard is a structure stub — actual token validation logic
  * will be wired in the auth feature PR. The guard currently always
@@ -16,6 +18,17 @@
  */
 
 import 'react-native-gesture-handler';
+import * as Sentry from 'sentry-expo';
+
+// Initialize Sentry at module level (before any component code)
+if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    tracesSampleRate: 0.2,
+    enableInExpoDevelopment: false,
+  });
+}
+
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -35,14 +48,20 @@ import { AuthProvider } from '../src/context/AuthContext';
 import { SocketProvider } from '../src/context/SocketContext';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { GlobalAlert } from '../src/components/GlobalAlert';
-import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import ErrorBoundary from '../src/components/ErrorBoundary';
+import OfflineNotice from '../src/components/OfflineNotice';
 
 import { BootScreen } from '../src/components/BootScreen';
 
-// Prevent the splash screen from auto-hiding before fonts are loaded
-SplashScreen.preventAutoHideAsync();
+import {
+  onNotificationResponse,
+  checkInitialNotificationResponse,
+} from '../src/utils/notifications';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+// Prevent the splash screen from auto-hiding before fonts are loaded
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout(): React.JSX.Element | null {
   const [animationDone, setAnimationDone] = useState(false);
@@ -113,6 +132,18 @@ export default function RootLayout(): React.JSX.Element | null {
     }
   }, [isAuthenticated, segments, fontsLoaded, isAuthChecked]);
 
+  // ── Push notification deep linking (M13) ─────────────────────────────────
+  useEffect(() => {
+    if (!isAuthChecked) return;
+
+    checkInitialNotificationResponse(router);
+
+    const unsubscribe = onNotificationResponse(router);
+    return () => {
+      unsubscribe?.();
+    };
+  }, [isAuthChecked]);
+
   if (!fontsLoaded && !fontError) {
     return null;
   }
@@ -120,6 +151,7 @@ export default function RootLayout(): React.JSX.Element | null {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
+        <OfflineNotice />
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>

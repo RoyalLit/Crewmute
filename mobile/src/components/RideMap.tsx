@@ -3,10 +3,19 @@ import { View, StyleSheet, ActivityIndicator, Text, Platform } from 'react-nativ
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, UrlTile } from 'react-native-maps';
 import { useTheme } from '../design/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { brandColors } from '../design/tokens';
+
+/** Extract just the city portion from a stored location string like "Chennai, Tamil Nadu" */
+const extractCity = (loc: string): string => {
+  if (!loc) return '';
+  const parts = loc.split(',');
+  return parts[0].trim();
+};
 
 interface RideMapProps {
   fromCity: string;
   toCity: string;
+  stops?: string[];
 }
 
 interface Coordinate {
@@ -14,7 +23,7 @@ interface Coordinate {
   longitude: number;
 }
 
-export function RideMap({ fromCity, toCity }: RideMapProps) {
+export function RideMap({ fromCity, toCity, stops = [] }: RideMapProps) {
   const { colors, isDark } = useTheme();
   const mapRef = useRef<MapView>(null);
   
@@ -22,6 +31,7 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
   const [error, setError] = useState<string | null>(null);
   const [fromCoord, setFromCoord] = useState<Coordinate | null>(null);
   const [toCoord, setToCoord] = useState<Coordinate | null>(null);
+  const [stopCoords, setStopCoords] = useState<Coordinate[]>([]);
   const [routeCoords, setRouteCoords] = useState<Coordinate[]>([]);
 
   useEffect(() => {
@@ -30,36 +40,66 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
         setLoading(true);
         setError(null);
 
-        // 1. Geocode cities
-        const getCoord = async (city: string) => {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1&countrycodes=IN`);
-          const data = await res.json();
-          if (data && data.length > 0) {
-            return {
-              latitude: parseFloat(data[0].lat),
-              longitude: parseFloat(data[0].lon),
-            };
+        // Geocode a city name → coordinate (uses just the city portion)
+        const getCoord = async (cityStr: string): Promise<Coordinate | null> => {
+          const city = extractCity(cityStr);
+          if (!city) return null;
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1&countrycodes=IN`
+            );
+            const data = await res.json();
+            if (data && data.length > 0) {
+              return {
+                latitude: parseFloat(data[0].lat),
+                longitude: parseFloat(data[0].lon),
+              };
+            }
+            return null;
+          } catch {
+            return null;
           }
-          throw new Error(`Could not find coordinates for ${city}`);
         };
 
-        const origin = await getCoord(fromCity);
-        const destination = await getCoord(toCity);
+        // Geocode origin and destination (required)
+        const [origin, destination] = await Promise.all([
+          getCoord(fromCity),
+          getCoord(toCity),
+        ]);
+
+        if (!origin || !destination) {
+          throw new Error('Could not geocode origin or destination');
+        }
 
         setFromCoord(origin);
         setToCoord(destination);
 
-        // 2. Fetch driving route using OSRM public API
+        // Geocode stops individually — failures are skipped gracefully
+        const resolvedStops: (Coordinate | null)[] = await Promise.all(
+          stops.map(stop => getCoord(stop))
+        );
+        const validStops = resolvedStops.filter((c): c is Coordinate => c !== null);
+        setStopCoords(validStops);
+
+        // Build OSRM waypoints: origin ; validStops... ; destination
+        const allWaypoints = [origin, ...validStops, destination];
+        const coordString = allWaypoints
+          .map(c => `${c.longitude},${c.latitude}`)
+          .join(';');
+
+        // Fetch driving route with all waypoints
         const routeRes = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`
+          `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`
         );
         const routeData = await routeRes.json();
 
         if (routeData.code === 'Ok' && routeData.routes.length > 0) {
-          const coordinates = routeData.routes[0].geometry.coordinates.map((coord: [number, number]) => ({
-            latitude: coord[1],
-            longitude: coord[0],
-          }));
+          const coordinates = routeData.routes[0].geometry.coordinates.map(
+            (coord: [number, number]) => ({
+              latitude: coord[1],
+              longitude: coord[0],
+            })
+          );
           setRouteCoords(coordinates);
         }
 
@@ -74,14 +114,15 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
     if (fromCity && toCity) {
       fetchMapData();
     }
-  }, [fromCity, toCity]);
+  // Re-fetch if stops change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromCity, toCity, stops.join(',')]);
 
   const [animatedCoords, setAnimatedCoords] = useState<Coordinate[]>([]);
 
   // Fit map to route when coords are ready and start animation
   useEffect(() => {
     if (mapRef.current && routeCoords.length > 0) {
-      // Delay the map fitting slightly to ensure map is fully mounted
       setTimeout(() => {
         mapRef.current?.fitToCoordinates(routeCoords, {
           edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
@@ -91,13 +132,12 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
 
       let intervalId: NodeJS.Timeout;
 
-      // Wait for the map fitting animation (~1000ms) to complete before drawing the line
       const animationDelayId = setTimeout(() => {
         setAnimatedCoords([]);
         let currentIndex = 0;
         const totalPoints = routeCoords.length;
-        const durationMs = 1500; // 1.5 seconds animation
-        const intervalMs = 30; // ~33 fps
+        const durationMs = 1500;
+        const intervalMs = 30;
         const totalSteps = durationMs / intervalMs;
         const pointsPerStep = Math.max(1, Math.ceil(totalPoints / totalSteps));
 
@@ -110,15 +150,16 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
             setAnimatedCoords(routeCoords.slice(0, currentIndex));
           }
         }, intervalMs);
-      }, 1500); // 500ms initial + 1000ms map zoom
+      }, 1500);
 
       return () => {
         clearTimeout(animationDelayId);
         if (intervalId) clearInterval(intervalId);
       };
     } else if (mapRef.current && fromCoord && toCoord) {
+      const allPoints = fromCoord ? [fromCoord, ...stopCoords, toCoord].filter(Boolean) : [];
       setTimeout(() => {
-        mapRef.current?.fitToCoordinates([fromCoord, toCoord], {
+        mapRef.current?.fitToCoordinates(allPoints, {
           edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
           animated: true,
         });
@@ -126,7 +167,7 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
     }
     
     return undefined;
-  }, [routeCoords, fromCoord, toCoord]);
+  }, [routeCoords, fromCoord, toCoord, stopCoords]);
 
   if (loading) {
     return (
@@ -169,12 +210,30 @@ export function RideMap({ fromCity, toCity }: RideMapProps) {
             flipY={false}
           />
         )}
+
+        {/* Origin marker */}
         <Marker coordinate={fromCoord} title={fromCity}>
           <View style={[styles.markerContainer, { backgroundColor: colors.interactive.primary }]}>
             <Ionicons name="location" size={16} color="#FFF" />
           </View>
         </Marker>
-        
+
+        {/* Intermediate stop markers */}
+        {stopCoords.map((coord, index) => (
+          <Marker
+            key={`stop-marker-${index}`}
+            coordinate={coord}
+            title={stops[index] || `Stop ${index + 1}`}
+          >
+            <View style={[styles.stopMarkerContainer, { backgroundColor: isDark ? '#2E2E4A' : '#FFF', borderColor: brandColors.electricViolet }]}>
+              <Text style={[styles.stopMarkerText, { color: brandColors.electricViolet }]}>
+                {index + 1}
+              </Text>
+            </View>
+          </Marker>
+        ))}
+
+        {/* Destination marker */}
         <Marker coordinate={toCoord} title={toCity}>
           <View style={[styles.markerContainer, { backgroundColor: colors.status.rejectedText }]}>
             <Ionicons name="flag" size={16} color="#FFF" />
@@ -230,9 +289,26 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  stopMarkerContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  stopMarkerText: {
+    fontSize: 11,
+    fontFamily: 'PlusJakartaSans-700Bold',
+  },
   errorText: {
     marginTop: 8,
     fontSize: 14,
-    fontFamily: 'PlusJakartaSans_500Medium',
+    fontFamily: 'PlusJakartaSans-500Medium',
   },
 });

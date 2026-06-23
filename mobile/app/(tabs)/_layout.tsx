@@ -15,19 +15,27 @@ import Animated, {
   withTiming,
   interpolateColor,
 } from 'react-native-reanimated';
+
+import { useTheme } from '../../src/design/theme';
+import { useReducedMotion } from '../../src/design/useReducedMotion';
+import { brandColors } from '../../src/design/tokens';
+import ErrorBoundary from '../../src/components/ErrorBoundary';
+import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+
+// ─── Animated Tab Item ─────────────────────────────────────────
+
+import { Easing } from 'react-native-reanimated';
+
+import type { PostBottomSheetRef } from '../../src/components/PostBottomSheet';
+import { PostBottomSheet } from '../../src/components/PostBottomSheet';
+import { useRef } from 'react';
 let BlurView: any;
 try {
   BlurView = require('expo-blur').BlurView;
 } catch {
   // expo-blur may not be available on all targets
 }
-
-import { useTheme } from '../../src/design/theme';
-import { useReducedMotion } from '../../src/design/useReducedMotion';
-import { brandColors } from '../../src/design/tokens';
-import { ErrorBoundary } from '../../src/components/ErrorBoundary';
-import { Ionicons } from '@expo/vector-icons';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 // ─── Tab configuration ────────────────────────────────────────
 
@@ -73,10 +81,6 @@ const TAB_CONFIGS: TabConfig[] = [
 ];
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
-
-// ─── Animated Tab Item ─────────────────────────────────────────
-
-import { Easing } from 'react-native-reanimated';
 
 function AnimatedTabItem({
   isFocused,
@@ -274,9 +278,6 @@ function CustomTabBar(props: BottomTabBarProps & { onPostPress?: () => void }) {
     </View>
   );
 }
-
-import { PostBottomSheet, PostBottomSheetRef } from '../../src/components/PostBottomSheet';
-import { useRef } from 'react';
 
 // ─── Layout ────────────────────────────────────────────────────
 

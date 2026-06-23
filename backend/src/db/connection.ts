@@ -14,6 +14,7 @@
 import mongoose from 'mongoose';
 
 import env from '../config/env';
+import { getIO } from '../features/chats/socket';
 import logger from '../shared/logger';
 
 const SLOW_QUERY_THRESHOLD = 100;
@@ -103,6 +104,16 @@ export function registerShutdownHandlers(): void {
           resolve();
         });
       });
+    }
+
+    try {
+      const socketIO = getIO();
+      if (socketIO) {
+        socketIO.close();
+        logger.info('Socket.IO server closed');
+      }
+    } catch (err) {
+      logger.error({ err }, 'Error closing Socket.IO');
     }
 
     await disconnectDB();

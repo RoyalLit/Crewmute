@@ -4,11 +4,13 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { spacing, brandColors } from '../design/tokens';
+import { Avatar } from './Avatar';
 import { typography } from '../design/typography';
 
 interface ChatRowProps {
   id: string;
   name: string;
+  imageUrl?: string;
   lastMessage: string;
   time: string;
   unreadCount?: number;
@@ -16,7 +18,7 @@ interface ChatRowProps {
   onPress?: () => void;
 }
 
-export const ChatRow = React.memo(function ChatRow({ id, name, lastMessage, time, unreadCount = 0, onDelete, onPress }: ChatRowProps) {
+export const ChatRow = React.memo(function ChatRow({ id, name, imageUrl, lastMessage, time, unreadCount = 0, onDelete, onPress }: ChatRowProps) {
   const { colors } = useTheme();
 
   const renderRightActions = (
@@ -44,9 +46,7 @@ export const ChatRow = React.memo(function ChatRow({ id, name, lastMessage, time
     <Swipeable renderRightActions={onDelete ? renderRightActions : undefined} rightThreshold={40}>
       <Pressable style={[styles.container, { backgroundColor: colors.background.primary }]} onPress={onPress} accessible accessibilityRole="button" accessibilityLabel={`Chat with ${name}`}>
         <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{name.charAt(0)}</Text>
-          </View>
+          <Avatar size="md" name={name} imageUrl={imageUrl} />
           {unreadCount > 0 && (
             <View style={styles.unreadDotContainer}>
               <View style={[styles.unreadDot, { borderColor: colors.background.card }]} />
@@ -78,19 +78,6 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginRight: spacing.md,
     position: 'relative',
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(139, 143, 168, 0.2)', // generic placeholder
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    fontFamily: 'PlusJakartaSans-800ExtraBold',
-    fontSize: typography.h2.fontSize,
-    color: brandColors.coolGray,
   },
   unreadDotContainer: {
     position: 'absolute',

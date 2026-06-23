@@ -26,11 +26,12 @@ export const PAGINATION = {
 } as const;
 
 export const RATE_LIMIT = {
-  // Auth endpoints: stricter limits AUTH_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-  AUTH_MAX_REQUESTS: 10,
+  // Auth endpoints: stricter limits
+  AUTH_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+  AUTH_MAX_REQUESTS: 20,
   // General endpoints
   GENERAL_WINDOW_MS: 15 * 60 * 1000,
-  GENERAL_MAX_REQUESTS: 100,
+  GENERAL_MAX_REQUESTS: 10000,
 } as const;
 
 export const RIDE = {

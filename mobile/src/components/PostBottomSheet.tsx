@@ -5,8 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { spacing, brandColors } from '../design/tokens';
 import { Alert } from './GlobalAlert';
-import { useCreateRideMutation } from '../api/ridesHooks';
+import { useCreateRideMutation, type CreateRideData } from '../api/ridesHooks';
 import { CityAutocomplete } from './CityAutocomplete';
+import { useAuthStore } from '../store/authStore';
 
 export type PostBottomSheetRef = BottomSheet;
 
@@ -17,12 +18,39 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState('14:30');
-  const [arrivalTime, setArrivalTime] = useState('18:30');
+  const [time, setTime] = useState('');
+  const [arrivalTime, setArrivalTime] = useState('');
   const [stops, setStops] = useState<string[]>([]);
   const [seats, setSeats] = useState(3);
-  const [fare, setFare] = useState('150');
+  const [fare, setFare] = useState('');
   const [cabType, setCabType] = useState<string>('');
+  const [genderPreference, setGenderPreference] = useState<'ANY' | 'SAME_GENDER'>('ANY');
+
+  const user = useAuthStore((state) => state.user);
+
+  // Real-time validations
+  const dateError = date.length > 0 && date.length < 10 ? null : (date && !/^\d{4}-\d{2}-\d{2}$/.test(date) ? 'Date must be in YYYY-MM-DD format' : null);
+  const timeError = time.length > 0 && time.length < 5 ? null : (time && !/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(time) ? 'Must be in 24-hour HH:mm format' : null);
+  const arrivalTimeError = arrivalTime.length > 0 && arrivalTime.length < 5 ? null : (arrivalTime && !/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(arrivalTime) ? 'Must be in 24-hour HH:mm format' : null);
+
+  let pastTimeError: string | null = null;
+  let arrivesNextDay = false;
+  if (!dateError && !timeError && date.length === 10 && time.length === 5) {
+    const selectedDateTime = new Date(`${date}T${time}:00`);
+    if (selectedDateTime.getTime() < Date.now()) {
+      pastTimeError = 'Departure time cannot be in the past.';
+    }
+  }
+  
+  if (!timeError && !arrivalTimeError && time.length === 5 && arrivalTime.length === 5) {
+    if (arrivalTime < time) {
+      arrivesNextDay = true;
+    }
+  }
+
+  const genderError = genderPreference === 'SAME_GENDER' && user?.gender !== 'FEMALE' ? 'Only female users can create Women Only rides.' : null;
+  const fareParsed = parseInt(fare);
+  const fareError = fare.length > 0 && (isNaN(fareParsed) || fareParsed <= 0) ? 'Fare must be greater than 0' : null;
 
   const formatDateMask = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');
@@ -62,24 +90,9 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
         return;
       }
       if (step === 2) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-           Alert.alert('Invalid Date', 'Date must be in YYYY-MM-DD format (e.g. 2024-05-20)');
+        if (!date || !time || !arrivalTime || dateError || timeError || arrivalTimeError || pastTimeError) {
+           Alert.alert('Invalid Input', 'Please fix the errors in red before continuing.');
            return;
-        }
-        if (!/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(time)) {
-           Alert.alert('Invalid Departure Time', 'Departure Time must be in 24-hour HH:mm format (e.g. 14:30)');
-           return;
-        }
-        if (!/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(arrivalTime)) {
-           Alert.alert('Invalid Arrival Time', 'Arrival Time must be in 24-hour HH:mm format (e.g. 18:30)');
-           return;
-        }
-        
-        // Ensure departure time is not in the past
-        const selectedDateTime = new Date(`${date}T${time}:00`);
-        if (selectedDateTime.getTime() < Date.now()) {
-          Alert.alert('Invalid Time', 'Departure time cannot be in the past.');
-          return;
         }
       }
       if (step === 3) {
@@ -87,11 +100,23 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
           Alert.alert('Missing Field', 'Please select a vehicle type.');
           return;
         }
+        if (!fare || fareError) {
+          Alert.alert('Missing Field', 'Please enter a valid fare per seat.');
+          return;
+        }
       }
       setStep(step + 1);
     } else {
       if (!cabType) {
         Alert.alert('Missing Field', 'Please select a vehicle type.');
+        return;
+      }
+      if (!fare || fareError) {
+        Alert.alert('Missing Field', 'Please enter a valid fare per seat.');
+        return;
+      }
+      if (genderError) {
+        Alert.alert('Invalid Option', genderError);
         return;
       }
       try {
@@ -104,12 +129,12 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
           stops: stops.filter(s => s.trim() !== ''),
           totalSeats: seats,
           farePerSeat: parseInt(fare) || 0,
-          // @ts-ignore
-          cabType: cabType,
+          cabType: cabType as CreateRideData['cabType'],
+          genderPreference: genderPreference,
         });
 
         Alert.alert('Success', 'Ride Posted Successfully!');
-        // @ts-ignore
+        // @ts-expect-error - BottomSheet ref type doesn't expose close() on current
         ref?.current?.close();
         setTimeout(() => {
           setStep(1);
@@ -119,6 +144,7 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
           setDate('');
           setTime('');
           setArrivalTime('');
+          setGenderPreference('ANY');
         }, 500);
       } catch (e: any) {
         Alert.alert('Error', e.response?.data?.error?.message || 'Failed to post ride');
@@ -197,7 +223,7 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
           <>
             <Text style={[styles.title, { color: colors.text.primary }]}>When are you leaving?</Text>
             <Text style={[styles.stepperLabel, { color: colors.text.primary, marginBottom: spacing.sm }]}>Date of travel</Text>
-            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: dateError ? brandColors.coralPink : 'transparent', borderWidth: dateError ? 1 : 0, marginBottom: dateError ? 4 : spacing.md }]}>
               <Ionicons name="calendar-outline" size={20} color={colors.text.placeholder} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: colors.text.primary }]}
@@ -209,9 +235,10 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
                 maxLength={10}
               />
             </View>
+            {dateError && <Text style={{ color: brandColors.coralPink, fontSize: 12, marginBottom: spacing.md, marginLeft: 4 }}>{dateError}</Text>}
 
             <Text style={[styles.stepperLabel, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>Departure Time</Text>
-            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: (timeError || pastTimeError) ? brandColors.coralPink : 'transparent', borderWidth: (timeError || pastTimeError) ? 1 : 0, marginBottom: (timeError || pastTimeError) ? 4 : spacing.md }]}>
               <Ionicons name="time-outline" size={20} color={colors.text.placeholder} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: colors.text.primary }]}
@@ -223,9 +250,10 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
                 maxLength={5}
               />
             </View>
+            {(timeError || pastTimeError) && <Text style={{ color: brandColors.coralPink, fontSize: 12, marginBottom: spacing.md, marginLeft: 4 }}>{timeError || pastTimeError}</Text>}
 
             <Text style={[styles.stepperLabel, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>Estimated Arrival Time</Text>
-            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: arrivalTimeError ? brandColors.coralPink : 'transparent', borderWidth: arrivalTimeError ? 1 : 0, marginBottom: (arrivalTimeError || arrivesNextDay) ? 4 : spacing.md }]}>
               <Ionicons name="time-outline" size={20} color={colors.text.placeholder} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: colors.text.primary }]}
@@ -237,6 +265,11 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
                 maxLength={5}
               />
             </View>
+            {arrivalTimeError ? (
+              <Text style={{ color: brandColors.coralPink, fontSize: 12, marginBottom: spacing.md, marginLeft: 4 }}>{arrivalTimeError}</Text>
+            ) : arrivesNextDay ? (
+              <Text style={{ color: brandColors.mintGreen, fontSize: 12, marginBottom: spacing.md, marginLeft: 4 }}>Arrives next day</Text>
+            ) : null}
           </>
         );
       case 3:
@@ -258,7 +291,7 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
               </View>
             </View>
 
-            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+            <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: fareError ? brandColors.coralPink : 'transparent', borderWidth: fareError ? 1 : 0, marginBottom: fareError ? 4 : spacing.md }]}>
               <Text style={[styles.currencySymbol, { color: colors.text.primary }]}>₹</Text>
               <TextInput
                 style={[styles.input, { color: colors.text.primary, fontSize: 20, fontFamily: 'PlusJakartaSans-700Bold' }]}
@@ -270,6 +303,7 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
               />
               <Text style={[styles.perSeat, { color: colors.text.secondary }]}>/ seat</Text>
             </View>
+            {fareError && <Text style={{ color: brandColors.coralPink, fontSize: 12, marginBottom: spacing.md, marginLeft: 4 }}>{fareError}</Text>}
 
             <Text style={[styles.stepperLabel, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>Vehicle Type</Text>
             <View style={{ marginBottom: spacing.md, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
@@ -294,6 +328,31 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
                 </Pressable>
               ))}
             </View>
+
+            <Text style={[styles.stepperLabel, { color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.sm }]}>Gender Preference</Text>
+            <View style={{ marginBottom: genderError ? 4 : spacing.md, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+              {[{label: 'Any Gender', value: 'ANY'}, {label: 'Women Only', value: 'SAME_GENDER'}].map(type => (
+                <Pressable
+                  key={type.value}
+                  onPress={() => setGenderPreference(type.value as any)}
+                  accessible
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${type.label}`}
+                  style={[
+                    styles.cabChip,
+                    genderPreference === type.value ? { backgroundColor: brandColors.electricViolet, borderColor: brandColors.electricViolet } : { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                  ]}
+                >
+                  <Text style={[
+                    styles.cabChipText,
+                    genderPreference === type.value ? { color: '#FFF' } : { color: colors.text.secondary }
+                  ]}>
+                    {type.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {genderError && <Text style={{ color: brandColors.coralPink, fontSize: 12, marginBottom: spacing.md, marginLeft: 4 }}>{genderError}</Text>}
 
             <View style={[styles.earningsBox, { backgroundColor: isDark ? 'rgba(123, 97, 255, 0.1)' : '#F3F0FF' }]}>
               <Ionicons name="car" size={24} color={brandColors.electricViolet} />

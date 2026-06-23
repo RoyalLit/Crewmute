@@ -1,22 +1,46 @@
+# Stage 1: Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
 RUN npm ci
 
-COPY . .
+# Copy source code
+COPY tsconfig.json ./
+COPY src/ ./src/
+
+# Compile TypeScript to JavaScript
 RUN npm run build
 
+# Stage 2: Production
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --omit=dev
+# Set node environment to production
+ENV NODE_ENV=production
 
+USER node
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy compiled code from builder
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 5001
+# Expose the application port
+EXPOSE 5000
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+
+# Start the application
 CMD ["node", "dist/server.js"]

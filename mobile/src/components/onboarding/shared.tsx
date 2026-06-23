@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
+import type {
+  SharedValue} from 'react-native-reanimated';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withDelay,
   useAnimatedReaction,
-  SharedValue,
   Easing,
 } from 'react-native-reanimated';
 import { brandColors, darkColors } from '../../design/tokens';

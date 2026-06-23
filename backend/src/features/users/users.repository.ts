@@ -3,7 +3,7 @@ import { UserModel } from '../../db/models/User';
 
 export class UsersRepository {
   async findByIds(ids: string[]): Promise<IUser[]> {
-    const users = await UserModel.find({ _id: { $in: ids } }).lean();
+    const users = await UserModel.find({ _id: { $in: ids } }).select('-password').lean();
     return users as unknown as IUser[];
   }
 
