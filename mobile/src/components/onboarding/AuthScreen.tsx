@@ -15,6 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tokens } from './shared';
 
 const { width, height } = Dimensions.get('window');
@@ -90,9 +92,14 @@ function Particle({ x, y, size, color, opacity, duration, isActive }: {
 // ─── Main component ───────────────────────────────────────────────────────────
 export function AuthScreen({ currentIndex, myIndex }: { currentIndex: SharedValue<number>; myIndex: number }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  const handleBack = () => {
+    currentIndex.value = withTiming(3, { duration: 300 });
+  };
 
   // Logo entrance
-  const logoScale = useSharedValue(0.6);
+  const logoSize = useSharedValue(72); // 120 * 0.6 = 72
 
   // Glow pulse (always active when screen is visible)
   const glowScale = useSharedValue(1.0);
@@ -134,7 +141,7 @@ export function AuthScreen({ currentIndex, myIndex }: { currentIndex: SharedValu
     (isActive) => {
       if (isActive) {
         // Entrance animations
-        logoScale.value = withSpring(1, { damping: 12, stiffness: 100 });
+        logoSize.value = withSpring(120, { damping: 12, stiffness: 100 });
         wordmarkOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
         wordmarkY.value = withDelay(300, withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }));
         taglineOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
@@ -159,7 +166,7 @@ export function AuthScreen({ currentIndex, myIndex }: { currentIndex: SharedValu
           true
         );
       } else {
-        logoScale.value = 0.6;
+        logoSize.value = 72;
         wordmarkOpacity.value = 0;
         wordmarkY.value = 14;
         taglineOpacity.value = 0;
@@ -177,8 +184,9 @@ export function AuthScreen({ currentIndex, myIndex }: { currentIndex: SharedValu
     // via a simple approach: use the index directly
   }, []);
 
-  const logoBoxStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: logoScale.value }],
+  const logoStyle = useAnimatedStyle(() => ({
+    width: logoSize.value,
+    height: logoSize.value,
   }));
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
@@ -225,6 +233,13 @@ export function AuthScreen({ currentIndex, myIndex }: { currentIndex: SharedValu
         <Particle key={p.id} {...p} isActive={Math.round(currentIndex.value) === myIndex} />
       ))}
 
+      {/* ── Back Button ── */}
+      <Animated.View style={[styles.backBtnWrapper, { top: Math.max(insets.top, 20) }, btnStyle]}>
+        <Pressable style={styles.backBtn} onPress={handleBack} hitSlop={20}>
+          <Ionicons name="arrow-back" size={24} color="#FFF" />
+        </Pressable>
+      </Animated.View>
+
       {/* ── Top half: logo + wordmark ── */}
       <View style={styles.authTop}>
       {/* Radial glow behind logo — fades from violet core to transparent */}
@@ -237,10 +252,14 @@ export function AuthScreen({ currentIndex, myIndex }: { currentIndex: SharedValu
           />
         </Animated.View>
 
-        {/* Logo image */}
-        <Animated.View style={[styles.logoBox, logoBoxStyle]}>
-          <Image source={LOGO} style={styles.logoImage} resizeMode="contain" />
-        </Animated.View>
+        {/* Logo image centered within a fixed layout box */}
+        <View style={styles.logoBox}>
+          <Animated.Image 
+            source={LOGO} 
+            style={logoStyle} 
+            resizeMode="contain" 
+          />
+        </View>
 
         {/* Wordmark + tagline — tightly grouped */}
         <Animated.Text style={[styles.wordmark, wmStyle]}>Crewmute</Animated.Text>
@@ -276,6 +295,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
 
+  // ── Back Button ────────────────────────────────────────────────────────────
+  backBtnWrapper: {
+    position: 'absolute',
+    left: 20,
+    zIndex: 10,
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   // ── Top section ──────────────────────────────────────────────────────────
   authTop: {
     flex: 1,
@@ -296,10 +330,6 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  logoImage: {
-    width: 120,
-    height: 120,
   },
   wordmark: {
     fontFamily: 'PlusJakartaSans-800ExtraBold',

@@ -23,6 +23,7 @@ export default function RegisterScreen() {
   });
   
   const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [error, setError] = useState('');
   
   const registerMutation = useRegisterMutation();
@@ -162,18 +163,21 @@ export default function RegisterScreen() {
                 secureTextEntry={!showPassword}
                 value={form.password}
                 onChangeText={(t) => setForm({ ...form, password: t })}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 textContentType="newPassword"
                 autoComplete="new-password"
               />
-              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon} hitSlop={10}>
                 <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.text.secondary} />
               </Pressable>
             </View>
           </View>
 
           {/* Password constraints checklist */}
-          <View style={{ marginTop: 4, paddingHorizontal: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          {(isPasswordFocused || form.password.length > 0) && (
+            <View style={{ marginTop: 4, paddingHorizontal: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
               {form.password.length >= 8 ? (
                 <Ionicons name="checkmark" size={16} color={brandColors.mintGreen} />
               ) : (
@@ -210,6 +214,7 @@ export default function RegisterScreen() {
               </Text>
             </View>
           </View>
+          )}
 
           {error ? <Text style={[styles.errorText, { color: brandColors.coralPink }]}>{error}</Text> : null}
 

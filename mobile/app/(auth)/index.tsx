@@ -47,21 +47,28 @@ export default function OnboardingFlow() {
 
   const panGesture = Gesture.Pan()
     .onUpdate((e) => {
-      if (currentIndex.value === 4) return;
       let newTranslation = e.translationX;
-      if (currentIndex.value === 0 && e.translationX > 0) {
+      const currentRound = Math.round(currentIndex.value);
+      
+      // Rubber banding at edges
+      if (currentRound === 4 && e.translationX < 0) {
+        newTranslation = e.translationX * 0.3;
+      } else if (currentRound === 0 && e.translationX > 0) {
         newTranslation = e.translationX * 0.3;
       }
       translationX.value = newTranslation / width;
     })
     .onEnd((e) => {
-      if (currentIndex.value === 4) return;
-      let nextIndex = currentIndex.value;
+      let nextIndex = Math.round(currentIndex.value); // Fallback to closest whole screen
+      
       if (e.translationX < -50 && currentIndex.value < 4) {
         nextIndex = Math.floor(currentIndex.value) + 1;
       } else if (e.translationX > 50 && currentIndex.value > 0) {
         nextIndex = Math.ceil(currentIndex.value) - 1;
       }
+      
+      nextIndex = Math.max(0, Math.min(4, nextIndex));
+      
       translationX.value = withSpring(0, SPRING_CONFIG);
       currentIndex.value = withSpring(nextIndex, SPRING_CONFIG);
     });
@@ -84,36 +91,51 @@ export default function OnboardingFlow() {
 
     const style = useAnimatedStyle(() => {
       const position = index - (currentIndex.value - translationX.value);
-      let translateX = position * width;
-      let opacity = 1;
+      
+      let translateX = 0;
+      let scale = 1;
+      let zIndex = 0;
 
-      if (position < 0) {
-        translateX = position * (width * 0.5);
-        opacity = interpolate(position, [-1, 0], [0.6, 1], Extrapolate.CLAMP);
+      if (position > 0) {
+        // Screen is sliding in from the right
+        translateX = position * width;
+        scale = 1;
+        zIndex = 10;
+      } else {
+        // Screen is sinking backwards into the background
+        translateX = position * width * 0.25;
+        scale = interpolate(position, [-1, 0], [0.92, 1], Extrapolate.CLAMP);
+        zIndex = 0;
       }
 
-      if (index === 4) {
-        opacity = interpolate(currentIndex.value, [3, 4], [0, 1], Extrapolate.CLAMP);
-        translateX = 0;
-      } else if (currentIndex.value > 3) {
-        const fadeFactor = interpolate(currentIndex.value, [3, 4], [1, 0], Extrapolate.CLAMP);
-        opacity = opacity * fadeFactor;
-      }
+      // Add a cast shadow to the top card for depth
+      const shadowOpacity = interpolate(position, [0, 1], [0.5, 0], Extrapolate.CLAMP);
 
       return {
         position: 'absolute',
         width,
         height,
-        transform: [{ translateX }],
-        opacity,
-        zIndex: index === Math.round(currentIndex.value) ? 10 : 0,
+        transform: [{ translateX }, { scale }],
+        zIndex,
+        shadowColor: '#000',
+        shadowOffset: { width: -15, height: 0 },
+        shadowOpacity: position >= 0 && position < 1 ? shadowOpacity : 0,
+        shadowRadius: 25,
+        elevation: position >= 0 && position < 1 ? 15 : 0,
+      };
+    });
+
+    const overlayStyle = useAnimatedStyle(() => {
+      const position = index - (currentIndex.value - translationX.value);
+      return {
+        opacity: position < 0 ? interpolate(position, [-1, 0], [0.6, 0], Extrapolate.CLAMP) : 0,
       };
     });
 
     useAnimatedReaction(
       () => Math.round(currentIndex.value),
       (current) => {
-        runOnJS(setShouldRender)(index === current || index === current + 1 || (current >= 3 && index === 4));
+        runOnJS(setShouldRender)(Math.abs(index - current) <= 1);
       },
     );
 
@@ -126,23 +148,32 @@ export default function OnboardingFlow() {
         {index === 2 && <Screen3 currentIndex={currentIndex} myIndex={2} topInset={insets.top} />}
         {index === 3 && <Screen4 currentIndex={currentIndex} myIndex={3} topInset={insets.top} />}
         {index === 4 && <AuthScreen currentIndex={currentIndex} myIndex={4} />}
+        
+        {/* Darkening Overlay for Depth Lighting */}
+        <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: '#000' }, overlayStyle]} pointerEvents="none" />
       </Animated.View>
     );
   };
 
-  const continueBtnStyle = useAnimatedStyle(() => {
-    const isVisible = currentIndex.value < 3.9;
-    return {
-      opacity: withTiming(isVisible ? 1 : 0, { duration: 200 }),
-      zIndex: isVisible ? 100 : -1,
-    };
-  });
+  const globalControlsStyle = useAnimatedStyle(() => {
+    // Current "virtual" position relative to the last onboarding screen (index 3)
+    const position = 3 - (currentIndex.value - translationX.value);
+    
+    let translateX = 0;
+    let scale = 1;
+    let opacity = 1;
+    
+    if (position < 0) {
+      // Swiping to AuthScreen. The global UI should sink away with Screen 3!
+      translateX = position * width * 0.25;
+      scale = interpolate(position, [-1, 0], [0.92, 1], Extrapolate.CLAMP);
+      opacity = interpolate(position, [-1, 0], [0, 1], Extrapolate.CLAMP);
+    }
 
-  const skipBtnStyle = useAnimatedStyle(() => {
-    const isVisible = currentIndex.value < 3.9;
     return {
-      opacity: withTiming(isVisible ? 1 : 0, { duration: 200 }),
-      zIndex: isVisible ? 100 : -1,
+      transform: [{ translateX }, { scale }],
+      opacity,
+      zIndex: position < -0.5 ? -1 : 100,
     };
   });
 
@@ -152,17 +183,17 @@ export default function OnboardingFlow() {
         <StatusBar style="light" />
         {[0, 1, 2, 3, 4].map(i => <AnimatedScreen key={i} index={i} />)}
 
-        <Animated.View style={[styles.skipBtn, { top: Math.max(insets.top, 24) }, skipBtnStyle]}>
+        <Animated.View style={[styles.skipBtn, { top: Math.max(insets.top, 24) }, globalControlsStyle]}>
           <Pressable onPress={skipToAuth} accessible accessibilityRole="button" accessibilityLabel="Skip onboarding">
             <Text style={styles.skipText}>Skip</Text>
           </Pressable>
         </Animated.View>
 
-        <Animated.View style={[styles.dotsContainer, { bottom: Math.max(insets.bottom, 24) + 80 }, skipBtnStyle]} pointerEvents="none">
+        <Animated.View style={[styles.dotsContainer, { bottom: Math.max(insets.bottom, 24) + 80 }, globalControlsStyle]} pointerEvents="none">
           {[0, 1, 2, 3].map((i) => <Dot key={i} index={i} />)}
         </Animated.View>
 
-        <Animated.View style={[styles.actionContainer, { bottom: Math.max(insets.bottom, 24) }, continueBtnStyle]} pointerEvents="box-none">
+        <Animated.View style={[styles.actionContainer, { bottom: Math.max(insets.bottom, 24) }, globalControlsStyle]} pointerEvents="box-none">
           <Pressable style={styles.continueBtn} onPress={goToNext}>
             <DynamicContinueText currentIndex={currentIndex} />
           </Pressable>
@@ -202,6 +233,8 @@ const styles = StyleSheet.create({
   },
   screen: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: tokens.bg,
+    overflow: 'hidden',
   },
   skipBtn: {
     position: 'absolute',

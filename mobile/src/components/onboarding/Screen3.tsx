@@ -60,16 +60,16 @@ export function Screen3({ currentIndex, myIndex, topInset }: { currentIndex: Sha
   return (
     <View style={styles.screenContent}>
       <View style={[styles.heroZone, { height: height }]}>
-        <Image source={SCENE_3} style={[styles.heroImage, { height: height, transform: [{ scale: 1.2 }, { translateY: -height * 0.12 }] }]} resizeMode="cover" accessibilityElementsHidden />
+        <Image source={SCENE_3} style={[styles.heroImage, { height: height,transform: [{ translateY: -height * 0.07 }] }]} resizeMode="cover" accessibilityElementsHidden />
         <LinearGradient colors={[tokens.bg, 'rgba(13,13,28,0.8)', 'transparent']} locations={[0, 0.4, 1]} style={[styles.gradientMaskTop, { height: topInset + 60 }]} />
-        <LinearGradient colors={['transparent', tokens.bg, tokens.bg]} locations={[0, 0.55, 1]} style={[styles.gradientMask, { height: height * 0.65 }]} />
+        <LinearGradient colors={['transparent', 'rgba(13,13,28,0.4)', tokens.bg]} locations={[0, 0.4, 1]} style={[styles.gradientMask, { height: height * 0.5 }]} />
       </View>
-      <View style={[styles.bottomZone, { bottom: 120 }]}>
+      <View style={[styles.bottomZone, { bottom: 100 }]}>
         <StaggeredText text="Split the cost effortlessly." currentIndex={currentIndex} myIndex={myIndex} />
         <Animated.Text style={[styles.subtext, { opacity: subOpacity }]}>
           Auto-calculate splits based on drop-offs. Pay directly in the app.
         </Animated.Text>
-        <View style={styles.savingsCard}>
+        <View style={[styles.savingsCard, { transform: [{ translateY: -20 }] }]}>
           <AnimatedNumber currentIndex={currentIndex} myIndex={myIndex} />
           <Text style={styles.savingsLabel}>average saved per trip</Text>
         </View>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   gradientMask: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   bottomZone: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 16 },
   subtext: { fontFamily: 'PlusJakartaSans-400Regular', fontSize: 15, color: tokens.textMuted, lineHeight: 24 },
-  savingsCard: { backgroundColor: tokens.card, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 24, borderWidth: 0.5, borderColor: '#2E2E4A', alignSelf: 'flex-start', marginTop: 24, alignItems: 'center' },
+  savingsCard: { backgroundColor: tokens.card, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 24, borderWidth: 0.5, borderColor: '#2E2E4A', alignSelf: 'flex-end', marginTop: 12, alignItems: 'center' },
   savingsNumber: { fontFamily: 'PlusJakartaSans-800ExtraBold', fontSize: 40, color: tokens.accent, textShadowColor: 'rgba(34,211,238,0.6)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 12, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   savingsLabel: { fontFamily: 'PlusJakartaSans-500Medium', fontSize: 12, color: tokens.textMuted, marginTop: -4 },
 });

@@ -42,20 +42,18 @@ export function Screen2({ currentIndex, myIndex, topInset }: { currentIndex: Sha
   return (
     <View style={styles.screenContent}>
       <View style={[styles.heroZone, { height: height }]}>
-        <Image source={SCENE_2} style={[styles.heroImage, { height: height, transform: [{ scale: 1.2 }, { translateY: -height * 0.12 }] }]} resizeMode="cover" accessibilityElementsHidden />
+        <Image source={SCENE_2} style={[styles.heroImage, { height: height, transform: [{ translateY: -height * 0.05 }] }]} resizeMode="cover" accessibilityElementsHidden />
         <LinearGradient colors={[tokens.bg, 'rgba(13,13,28,0.8)', 'transparent']} locations={[0, 0.4, 1]} style={[styles.gradientMaskTop, { height: topInset + 60 }]} />
-        <LinearGradient colors={['transparent', tokens.bg, tokens.bg]} locations={[0, 0.55, 1]} style={[styles.gradientMask, { height: height * 0.65 }]} />
+        <LinearGradient colors={['transparent', 'rgba(13,13,28,0.4)', tokens.bg]} locations={[0, 0.4, 1]} style={[styles.gradientMask, { height: height * 0.5 }]} />
       </View>
       <View style={[styles.bottomZone, { bottom: 120 }]}>
         <StaggeredText text="Verified students only." currentIndex={currentIndex} myIndex={myIndex} />
         <Animated.Text style={[styles.subtext, { opacity: subOpacity }]}>
           No strangers. No sketchy rides. Only share rides with verified students.
         </Animated.Text>
-        <Animated.View style={[styles.trustPill, { transform: [{ scale: pillScale }], opacity: pillOpacity }]}>
-          <View style={styles.trustShield}>
-            <Ionicons name="checkmark-sharp" size={12} color="#FFFFFF" />
-          </View>
-          <Text style={styles.trustPillText}>College email verified</Text>
+        <Animated.View style={[styles.trustBadge, { transform: [{ scale: pillScale }], opacity: pillOpacity }]}>
+          <Ionicons name="shield-checkmark" size={16} color={tokens.accent} style={styles.badgeIcon} />
+          <Text style={styles.trustBadgeText}>College email verified</Text>
         </Animated.View>
       </View>
     </View>
@@ -68,9 +66,25 @@ const styles = StyleSheet.create({
   heroImage: { width: '100%' },
   gradientMaskTop: { position: 'absolute', left: 0, right: 0, top: 0, zIndex: 2 },
   gradientMask: { position: 'absolute', left: 0, right: 0, bottom: 0 },
-  bottomZone: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 24, paddingTop: 16 },
+  bottomZone: { position: 'absolute', left: 0, right: 0, bottom: 120, paddingHorizontal: 24, paddingTop: 16 },
   subtext: { fontFamily: 'PlusJakartaSans-400Regular', fontSize: 15, color: tokens.textMuted, lineHeight: 24 },
-  trustPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(108,99,255,0.12)', borderWidth: 0.5, borderColor: 'rgba(108,99,255,0.3)', borderRadius: 100, paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'flex-start', marginTop: 24 },
-  trustShield: { width: 16, height: 16, backgroundColor: tokens.primary, borderRadius: 8, marginRight: 8, alignItems: 'center', justifyContent: 'center' },
-  trustPillText: { fontFamily: 'PlusJakartaSans-600SemiBold', fontSize: 12, color: '#7C74FF' },
+  trustBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(34, 211, 238, 0.08)', 
+    borderWidth: 1, 
+    borderColor: 'rgba(34, 211, 238, 0.25)', 
+    borderRadius: 8, 
+    paddingVertical: 10, 
+    paddingHorizontal: 14, 
+    alignSelf: 'flex-end', 
+    marginTop: 12,
+    shadowColor: tokens.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 4
+  },
+  badgeIcon: { marginRight: 8 },
+  trustBadgeText: { fontFamily: 'PlusJakartaSans-600SemiBold', fontSize: 13, color: tokens.accent, letterSpacing: 0.2 },
 });

@@ -58,11 +58,11 @@ export function Screen4({ currentIndex, myIndex, topInset }: { currentIndex: Sha
   return (
     <View style={styles.screenContent}>
       <View style={[styles.heroZone, { height: height }]}>
-        <Image source={SCENE_4} style={[styles.heroImage, { height: height, transform: [{ scale: 1.8 }, { translateY: -height * 0.08 }] }]} resizeMode="cover" accessibilityElementsHidden />
+        <Image source={SCENE_4} style={[styles.heroImage, { height: height, transform: [{ translateY: height * 0.05 }, {scale: 1.1 }] }]} resizeMode="cover" accessibilityElementsHidden />
         <LinearGradient colors={[tokens.bg, 'rgba(13,13,28,0.8)', 'transparent']} locations={[0, 0.4, 1]} style={[styles.gradientMaskTop, { height: topInset + 60 }]} />
-        <LinearGradient colors={['transparent', tokens.bg, tokens.bg]} locations={[0, 0.55, 1]} style={[styles.gradientMask, { height: height * 0.65 }]} />
+        <LinearGradient colors={['transparent', 'rgba(13,13,28,0.4)', tokens.bg]} locations={[0, 0.4, 1]} style={[styles.gradientMask, { height: height * 0.5 }]} />
       </View>
-      <View style={[styles.bottomZone, { bottom: 120 }]}>
+      <View style={[styles.bottomZone, { bottom: 150 }]}>
         <StaggeredText text="Never commute alone again." currentIndex={currentIndex} myIndex={myIndex} />
         <Animated.Text style={[styles.subtext, { opacity: subOpacity }]}>
           Join hundreds of students saving money and making friends on the way home.
