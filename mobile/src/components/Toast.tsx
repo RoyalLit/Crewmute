@@ -43,6 +43,19 @@ export function ToastProvider() {
   useEffect(() => {
     showListener = (toastData: ToastData) => {
       setData(toastData);
+      // Trigger intentional haptic feedback
+      if (Platform.OS !== 'web') {
+        if (toastData.type === 'success') {
+          // A satisfying double-pulse for success (e.g. after posting a ride)
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else if (toastData.type === 'error') {
+          // A heavy, warning vibration for errors
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } else {
+          // A light tick for general info
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+      }
       
       const duration = toastData.duration || 3000;
       

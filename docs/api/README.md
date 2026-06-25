@@ -4,33 +4,6 @@ This directory contains API endpoint reference documentation for Crewmute.
 
 All REST endpoints are documented in detail in the project's [ARCHITECTURE.md](../../ARCHITECTURE.md#4-api-endpoints) (Section 4).
 
-## Structure
-
-Each feature's endpoints are documented in their own file:
-
-```
-docs/api/
-├── README.md          ← This file
-├── auth.md            ← /auth endpoints (added with auth feature PR)
-├── users.md           ← /users endpoints
-├── rides.md           ← /rides endpoints
-├── requests.md        ← /requests endpoints
-└── chats.md           ← /chats endpoints
-```
-
-## Format
-
-Each endpoint is documented with:
-- Method and path
-- Authentication requirement
-- Request parameters (path, query, body) with types and validation rules
-- Success response schema with example
-- Error responses (status codes and error codes)
-
-## When to Update
-
-API documentation must be updated in the **same PR** as the code change — never in a follow-up. Every new, changed, or deleted endpoint requires an update to this directory.
-
 ## Base URL
 
 ```
