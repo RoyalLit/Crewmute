@@ -1,6 +1,6 @@
 import { Toast } from './Toast';
 import React, { useCallback, useMemo, forwardRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { BottomSheetScrollView, BottomSheetBackdrop, BottomSheetModal, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
@@ -112,7 +112,9 @@ export const PostBottomSheet = forwardRef<PostBottomSheetRef>((_props, ref) => {
         Toast.show({ title: 'Missing Field', message: 'Please select a vehicle type.', type: 'error' });
         return;
       }
-      if (!fare || fareError) {
+      
+      const currentFare = fare.trim();
+      if (!currentFare || currentFare === '0' || fareError) {
         Toast.show({ title: 'Missing Field', message: 'Please enter a valid fare per seat.', type: 'error' });
         return;
       }

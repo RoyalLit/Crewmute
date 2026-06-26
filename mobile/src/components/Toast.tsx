@@ -1,18 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Platform, DeviceEventEmitter } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  cancelAnimation,
-  runOnJS
-} from 'react-native-reanimated';
+import { View, Text, StyleSheet, Platform, DeviceEventEmitter, Animated } from 'react-native';
 import { useTheme } from '../design/theme';
 import { spacing } from '../design/tokens';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import React, { useState, useEffect, useRef } from 'react';
 
 export interface ToastData {
   title?: string;
@@ -34,8 +26,8 @@ export function ToastProvider() {
   const insets = useSafeAreaInsets();
   const [data, setData] = useState<ToastData | null>(null);
   
-  const translateY = useSharedValue(-100);
-  const opacity = useSharedValue(0);
+  const translateY = useRef(new Animated.Value(-100)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener(TOAST_EVENT, (toastData: ToastData) => {
@@ -61,49 +53,63 @@ export function ToastProvider() {
     if (data) {
       const duration = data.duration || 3000;
       
-      cancelAnimation(translateY);
-      cancelAnimation(opacity);
+      opacity.setValue(0);
+      translateY.setValue(-100);
 
-      // Animate in
-      translateY.value = withSpring(0, { damping: 12, stiffness: 150 });
-      opacity.value = withTiming(1, { duration: 200 });
+      Animated.parallel([
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          damping: 12,
+          stiffness: 150
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true
+        })
+      ]).start();
       
-      // Animate out after delay
       const timeout = setTimeout(() => {
-        translateY.value = withTiming(-100, { duration: 300 });
-        opacity.value = withTiming(0, { duration: 300 }, (finished) => {
-          if (finished) {
-            runOnJS(setData)(null);
-          }
+        Animated.parallel([
+          Animated.timing(translateY, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true
+          })
+        ]).start(({ finished }) => {
+          if (finished) setData(null);
         });
       }, duration);
 
       return () => clearTimeout(timeout);
     } else {
-      // Instantly reset when data is null
-      translateY.value = -100;
-      opacity.value = 0;
+      opacity.setValue(0);
+      translateY.setValue(-100);
     }
     return undefined;
   }, [data]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-    opacity: opacity.value,
-  }));
-
   const isSuccess = data?.type === 'success';
   const isError = data?.type === 'error';
-  const backgroundColor = isError ? colors.status.rejectedBackground : (isSuccess ? colors.status.acceptedBackground : colors.background.card);
+  // Use vibrant brand colors so white text is readable, rather than the subtle status badge backgrounds
+  const backgroundColor = isError ? '#FF6B6B' : (isSuccess ? '#20B2AA' : colors.background.card);
   const iconName = isError ? 'alert-circle' : (isSuccess ? 'checkmark-circle' : 'information-circle');
-  const textColor = '#FFFFFF';
+  // If we are using the card background (info), adapt text color to theme
+  const textColor = (!isError && !isSuccess) ? colors.text.primary : '#FFFFFF';
 
   return (
     <Animated.View
       style={[
         styles.container,
-        animatedStyle,
         {
+          transform: [{ translateY }],
+          opacity,
           top: Math.max(insets.top + 10, 50),
           backgroundColor,
         }
