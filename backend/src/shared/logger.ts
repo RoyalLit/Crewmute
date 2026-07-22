@@ -1,7 +1,7 @@
 /**
  * Structured Pino logger singleton.
  *
- * Per console.log, console.error, and console.warn
+ * Per AGENT_RULES.md §20.3: console.log, console.error, and console.warn
  * are forbidden in application code. Import and use this logger instead.
  *
  * Log levels:
@@ -11,13 +11,12 @@
  *   debug — development-only detail (never emitted in production)
  *
  * Every log entry should include relevant context (requestId, userId, resourceId).
- * Never log: passwords, tokens, session data, or PII ( ).
+ * Never log: passwords, tokens, session data, or PII (AGENT_RULES.md §20.3).
  */
 
 import pino from 'pino';
 
 import env from '../config/env';
-import { getRequestContext } from '../middleware/requestContext';
 
 const logger = pino({
   level: env.nodeEnv === 'production' ? 'info' : 'debug',
@@ -43,12 +42,6 @@ const logger = pino({
   redact: {
     paths: ['password', 'token', 'accessToken', 'refreshToken', 'otp', 'secret'],
     censor: '[REDACTED]',
-  },
-  // Automatically attach requestId from AsyncLocalStorage to every log entry
-  mixin() {
-    const ctx = getRequestContext();
-    if (!ctx) return {};
-    return { requestId: ctx.requestId };
   },
 });
 

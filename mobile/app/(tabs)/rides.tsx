@@ -4,10 +4,11 @@ import { StyleSheet, Text, View, FlatList, Pressable, Dimensions, ActivityIndica
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../src/components/GlobalAlert';
 
 import { useTheme } from '../../src/design/theme';
-import { TAB_BAR_HEIGHT, spacing } from '../../src/design/tokens';
+import { TAB_BAR_HEIGHT, spacing, brandColors } from '../../src/design/tokens';
 import { TicketRideCard } from '../../src/components/TicketRideCard';
 import { IncomingRequestItem } from '../../src/components/IncomingRequestItem';
 import { EmptyState } from '../../src/components/EmptyState';

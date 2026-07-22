@@ -131,10 +131,27 @@ export default function ChatScreen(): React.JSX.Element {
       }
     };
 
+    const handleMessageRead = ({ messageId }: { messageId: string, rideId: string }) => {
+      queryClient.setQueryData(['chat', rideId, otherUserId], (oldData: any) => {
+        if (!oldData) return oldData;
+        const newPages = oldData.pages.map((page: MessageResponseDTO[]) => 
+          page.map((msg: MessageResponseDTO) => 
+            msg.id === messageId ? { ...msg, readStatus: true } : msg
+          )
+        );
+        return {
+          ...oldData,
+          pages: newPages,
+        };
+      });
+    };
+
     socket.on('receive_message', handleReceiveMessage);
+    socket.on('message_read', handleMessageRead);
 
     return () => {
       socket.off('receive_message', handleReceiveMessage);
+      socket.off('message_read', handleMessageRead);
     };
   }, [socket, isConnected, rideId, otherUserId, session?.user.id, queryClient]);
 
@@ -162,9 +179,19 @@ export default function ChatScreen(): React.JSX.Element {
           <Text style={[styles.messageText, { color: isMe ? '#FFF' : colors.text.primary }]}>
             {item.content}
           </Text>
-          <Text style={[styles.timeText, { color: isMe ? 'rgba(255,255,255,0.7)' : colors.text.placeholder }]}>
-            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 2 }}>
+            <Text style={[styles.timeText, { color: isMe ? 'rgba(255,255,255,0.7)' : colors.text.placeholder }]}>
+              {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+            {isMe && (
+              <Ionicons 
+                name="checkmark-done" 
+                size={14} 
+                color={item.readStatus ? '#34B7F1' : 'rgba(255,255,255,0.7)'} 
+                style={{ marginLeft: 4 }} 
+              />
+            )}
+          </View>
         </View>
       </View>
     );

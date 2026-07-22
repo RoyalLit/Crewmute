@@ -4,7 +4,8 @@
  * This is the ONLY place where errors are converted to HTTP responses.
  * It must be registered last in the Express middleware chain (after all routes).
  *
- * Per *   - AppError subclasses → use their statusCode and code
+ * Per AGENT_RULES.md §20.1:
+ *   - AppError subclasses → use their statusCode and code
  *   - Mongoose validation errors → 400
  *   - Mongoose cast errors (invalid ObjectId) → 404
  *   - Unknown errors → 500, stack logged (never exposed to client in production)
@@ -13,15 +14,13 @@
 import type { ErrorRequestHandler, Request, Response, NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { Error as MongooseError } from 'mongoose';
-import multer from 'multer';
-import { ZodError } from 'zod';
 
 import env from '../config/env';
 import { AppError } from '../shared/errors';
 import logger from '../shared/logger';
 
 /**
- * Formats the error response body .
+ * Formats the error response body per AGENT_RULES.md §11.2.
  */
 function formatErrorResponse(
   code: string,
@@ -64,39 +63,12 @@ const errorHandler: ErrorRequestHandler = (err: unknown, req: Request, res: Resp
     return;
   }
 
-  // ── ZodError → 400 ───────────────────────────────────────────────────────
-  if (err instanceof ZodError) {
-    const details: Record<string, unknown> = {};
-    for (const issue of err.issues) {
-      const path = issue.path.join('.');
-      details[path] = issue.message;
-    }
-    logger.warn({ requestId: req.headers['x-request-id'], err }, 'Zod validation error');
-    res
-      .status(StatusCodes.BAD_REQUEST)
-      .json(formatErrorResponse('VALIDATION_ERROR', 'One or more fields are invalid.', details));
-    return;
-  }
-
   // ── Mongoose CastError (invalid ObjectId) → 404 ─────────────────────────
   if (err instanceof MongooseError.CastError) {
     logger.warn({ requestId: req.headers['x-request-id'], err }, 'Mongoose cast error');
     res
       .status(StatusCodes.NOT_FOUND)
       .json(formatErrorResponse('NOT_FOUND', 'The requested resource was not found.'));
-    return;
-  }
-
-  // ── MulterError (file upload) → 400 or 413 ──────────────────────────────
-  if (err instanceof multer.MulterError) {
-    const statusCode = err.code === 'LIMIT_FILE_SIZE' ? StatusCodes.REQUEST_TOO_LONG : StatusCodes.BAD_REQUEST;
-    const message = err.code === 'LIMIT_FILE_SIZE'
-      ? 'File size exceeds the 5MB limit.'
-      : err.code === 'LIMIT_UNEXPECTED_FILE'
-        ? 'Only JPEG, PNG, and WebP images are allowed.'
-        : 'File upload error.';
-    logger.warn({ requestId: req.headers['x-request-id'], err }, 'Multer upload error');
-    res.status(statusCode).json(formatErrorResponse('UPLOAD_ERROR', message));
     return;
   }
 

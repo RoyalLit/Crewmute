@@ -335,17 +335,27 @@ export default function RideDetailScreen() {
       {derivedStatus === 'active' && (
         <View style={[styles.bottomCta, { backgroundColor: colors.background.primary, borderTopColor: colors.border.default }]}>
           {isPoster ? (
-            <Pressable 
-              style={[styles.btn, styles.btnDestructive]}
-              onPress={handleCancelRide}
-              disabled={cancelRideMutation.isPending}
-            >
-              {cancelRideMutation.isPending ? (
-                <ActivityIndicator color="#FFF" />
-              ) : (
-                <Text style={styles.btnTextWhite}>Cancel Ride</Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {allIncoming.length === 0 && (
+                <Pressable 
+                  style={[styles.btn, { flex: 1, backgroundColor: colors.interactive.primary }]}
+                  onPress={() => router.push(`/ride/edit/${ride.id}`)}
+                >
+                  <Text style={[styles.btnText, { color: colors.interactive.primaryText }]}>Edit Ride</Text>
+                </Pressable>
               )}
-            </Pressable>
+              <Pressable 
+                style={[styles.btn, styles.btnDestructive, { flex: 1 }]}
+                onPress={handleCancelRide}
+                disabled={cancelRideMutation.isPending}
+              >
+                {cancelRideMutation.isPending ? (
+                  <ActivityIndicator color="#FFF" />
+                ) : (
+                  <Text style={styles.btnTextWhite}>Cancel Ride</Text>
+                )}
+              </Pressable>
+            </View>
           ) : existingRequest ? (
             existingRequest.status === 'accepted' ? (
               <Pressable 

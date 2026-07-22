@@ -5,29 +5,23 @@
  * Only types that are genuinely cross-cutting belong here.
  */
 
-
-
-/**
- * Authenticated user payload attached to the request by auth middleware.
- * Services and controllers reference req.user as this type.
- */
-import type { JwtPayload } from '../features/auth/auth.types';
-
-import 'express';
-
-declare module 'express' {
-  interface Request {
-    user?: JwtPayload;
-  }
-}
+import type { Request } from 'express';
 
 /**
  * Authenticated user payload attached to the request by auth middleware.
  * Services and controllers reference req.user as this type.
  */
 export interface RequestUser {
-  userId: string;
-  tokenVersion: number;
+  id: string;
+  email: string;
+}
+
+/**
+ * Express Request extended with an authenticated user.
+ * Use AuthenticatedRequest in protected route handlers.
+ */
+export interface AuthenticatedRequest extends Request {
+  user: RequestUser;
 }
 
 /**
@@ -42,7 +36,7 @@ export interface PaginatedResult<T> {
 
 /**
  * Query parameters common to all paginated list endpoints.
- * Per .
+ * Per AGENT_RULES.md §11.4.
  */
 export interface PaginationQuery {
   page: number;

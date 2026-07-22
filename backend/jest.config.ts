@@ -12,7 +12,6 @@ const config: Config = {
     '^@middleware/(.*)$': '<rootDir>/src/middleware/$1',
     '^@features/(.*)$': '<rootDir>/src/features/$1',
     '^@db/(.*)$': '<rootDir>/src/db/$1',
-    '^expo-server-sdk$': '<rootDir>/tests/__mocks__/expo-server-sdk.ts',
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -20,9 +19,9 @@ const config: Config = {
     '!src/**/*.types.ts',
     '!src/**/*.d.ts',
   ],
-  coverageThreshold: {
+  coverageThresholds: {
     global: {
-      // Thresholds — must not be lowered without an ADR
+      // Thresholds per AGENT_RULES.md §22.4 — must not be lowered without an ADR
       statements: 80,
       branches: 75,
       functions: 80,
@@ -30,9 +29,6 @@ const config: Config = {
     },
   },
   coverageReporters: ['text', 'lcov', 'clover'],
-  // Must use setupFiles (not setupFilesAfterFramework) so env vars are set
-  // before any test module's top-level imports run (env.ts validates at load time).
-  setupFiles: ['<rootDir>/jest.setup.ts'],
   clearMocks: true,
   restoreMocks: true,
 };

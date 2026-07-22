@@ -28,6 +28,7 @@ ios/
 android/
 *.orig.*
 web-build/
+
 # EAS
 .easignore
 
@@ -54,11 +55,3 @@ logs/
 # Misc
 *.pem
 .cache/
-
-# Firebase configs — contain API keys, never commit
-google-services.json
-GoogleService-Info.plist
-
-# AI agent instruction files — local only, not for the repo
-AGENT_RULES.md
-AGENTS.md

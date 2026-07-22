@@ -1,74 +1,155 @@
-<div align="center">
+# Crewmute
 
-# Crewmute | Campus Mobility Network
+A mobile-first carpool platform for Indian college students. Students post or browse intercity shared-cab rides for weekend and holiday travel, coordinate with verified co-passengers, and split costs transparently — all in one app.
 
-[![Next.js](https://img.shields.io/badge/Backend-Node.js_20-339933?logo=node.js&style=flat-square)](https://nodejs.org/)
-[![React Native](https://img.shields.io/badge/Mobile-React_Native-61DAFB?logo=react&style=flat-square)](https://reactnative.dev/)
-[![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&style=flat-square)](https://mongodb.com/)
-[![Status](https://img.shields.io/badge/Status-Production--Ready-blue?style=flat-square)](#)
-[![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)](LICENSE)
-
-**The campus carpool app for Indian college students.**  
-Post a ride. Find your crew. Split the fare.
-
-</div>
+Built with React Native + Expo (mobile) and Node.js + Express + MongoDB (backend).
 
 ---
 
-## 🌟 Vision & Impact
+## Prerequisites
 
-Every weekend, thousands of Indian college students travel home via shared cabs and spend hours coordinating through fragmented WhatsApp groups. Crewmute replaces that chaos with a dedicated, closed-network platform. Verified students can seamlessly post or browse intercity rides, request seats, and coordinate through real-time in-app chat.
+| Requirement | Version |
+|---|---|
+| Node.js | 20 LTS ([nvm](https://github.com/nvm-sh/nvm) recommended) |
+| npm | 10+ (bundled with Node 20) |
+| Expo CLI | via `npx expo` (no global install needed) |
+| MongoDB | Atlas account (free tier) or local instance |
 
-### Core Value Proposition
-- **Closed-Loop Security:** Strict college-email OTP verification ensuring rides are only shared among verified peers.
-- **Real-Time Logistics:** Socket.io powered instant messaging that unlocks automatically upon a matched ride request.
-- **State-Machine Ride Tracking:** Automated lifecycle management where rides expire instantly upon departure and seat counts adjust dynamically.
-- **Enterprise Observability:** Built-in Prometheus metrics and Pino structured logging for high-availability tracking.
+---
 
-### System Topography & State Machine
+## Local Setup
 
-```mermaid
-graph TD
-    A[Student Rider] -->|Posts Ride| B((Backend Engine))
-    C[Student Passenger] -->|Requests Seat| B
-    B -->|Validates Capacity| D{Seat Available?}
-    D -->|Yes| E[State: PENDING]
-    D -->|No| F[State: REJECTED]
-    E -->|Rider Accepts| G[State: MATCHED]
-    G -->|Trigger Event| H[Unlock Real-Time Chat]
-    H --> I[Socket.io Room]
-    A --> I
-    C --> I
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/<org>/crewmute.git
+cd crewmute
+```
+
+### 2. Backend
+
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env — fill in MONGO_URI and token secrets at minimum (see Environment Variables below)
+
+# Start the development server
+npm run dev
+# → Server starts on http://localhost:5000
+# → GET http://localhost:5000/health should return { status: 'ok' }
+```
+
+### 3. Mobile
+
+```bash
+cd mobile
+
+# Install dependencies
+npm install
+
+# Start Expo development server
+npx expo start
+
+# Press 'a' for Android emulator, 'i' for iOS simulator, or scan QR code with Expo Go
 ```
 
 ---
 
-## 🛠️ Architecture Highlights
+## Environment Variables
 
-- **Mobile Application**: React Native 0.81, Expo SDK 54, Expo Router v6, NativeWind 4, Zustand 4.
-- **Backend Services**: Node.js 20 LTS, Express 4, TypeScript 5, MongoDB 7 + Mongoose 8.
-- **Real-Time Engine**: Socket.io 4 for low-latency 1:1 messaging and read-receipts.
-- **Infrastructure**: Railway, MongoDB Atlas, Cloudinary, GitHub Actions CI, Expo EAS.
-- **Security & Auth**: Custom college-domain JWT flow (15m access / 7d refresh), bcrypt hashing (12 rounds).
-- **Design System**: Full light/dark mode support, WCAG 2.1 AA contrast compliance, 44pt touch targets.
+### Backend (`backend/.env`)
 
----
+| Variable | Example | Required | Purpose |
+|---|---|---|---|
+| `PORT` | `5000` | No (default: 5000) | Express server port |
+| `MONGO_URI` | `mongodb+srv://...` | **Yes** | MongoDB Atlas connection string |
+| `ACCESS_TOKEN_SECRET` | 64-char random string | **Yes** | JWT access token signing key |
+| `REFRESH_TOKEN_SECRET` | 64-char random string | **Yes** | JWT refresh token signing key |
+| `EMAIL_HOST` | `smtp.gmail.com` | Yes (for auth) | Nodemailer SMTP host |
+| `EMAIL_USER` | `crewmute@gmail.com` | Yes (for auth) | Sender email address |
+| `EMAIL_PASS` | Gmail app password | Yes (for auth) | Gmail app password |
+| `CLOUDINARY_CLOUD_NAME` | `crewmute` | Yes (for uploads) | Cloudinary account name |
+| `CLOUDINARY_API_KEY` | `...` | Yes (for uploads) | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | `...` | Yes (for uploads) | Cloudinary API secret |
+| `CLIENT_URL` | `exp://...` | No | Mobile app URL for CORS |
+| `NODE_ENV` | `development` | No (default: development) | Environment mode |
 
-## 📖 Documentation Ecosystem
+Copy `backend/.env.example` to `backend/.env` and fill in values. **Never commit `.env`.**
 
-| Document | Description |
+### Mobile (`mobile/.env` / `app.config.js`)
+
+| Variable | Purpose |
 |---|---|
-| [**PRD.md**](PRD.md) | Product requirements, core personas, and detailed feature scoping. |
-| [**ARCHITECTURE.md**](ARCHITECTURE.md) | Deep-dive into the system design, layered responsibilities, and API reference. |
-| [**DESIGN.md**](DESIGN.md) | The Crewmute design system, encompassing tokens, components, and UX patterns. |
-| [**docs/DECISIONS.md**](docs/DECISIONS.md) | Architectural Decision Records (ADRs) tracking engineering choices. |
-| [**SECURITY.md**](SECURITY.md) | Security policies, JWT architectures, and vulnerability management. |
+| `EXPO_PUBLIC_API_URL` | Backend base URL (e.g. `http://localhost:5000/api/v1`) |
+| `EXPO_PUBLIC_GOOGLE_PLACES_KEY` | Google Places API key for city autocomplete |
 
 ---
 
-## 📄 License & Copyright
+## Running Tests
 
-**All Rights Reserved.**
+### Backend
 
-This project represents proprietary source code built for portfolio showcase purposes.  
-*Built by Pahul · Amity University Punjab.*
+```bash
+cd backend
+npm test                  # Run all tests
+npm run test:coverage     # Run tests with coverage report
+npm run typecheck         # TypeScript type check (no emit)
+npm run lint              # ESLint
+```
+
+### Mobile
+
+```bash
+cd mobile
+npm test                  # Run all tests
+npm run typecheck         # TypeScript type check
+npm run lint              # ESLint
+```
+
+---
+
+## Project Structure
+
+```
+/
+├── mobile/          # React Native + Expo application
+├── backend/         # Node.js + Express API server
+├── docs/            # All project documentation
+│   ├── PRD.md
+│   ├── ARCHITECTURE.md
+│   ├── DESIGN.md
+│   ├── DECISIONS.md
+│   └── api/
+├── tests/           # Cross-cutting integration and E2E tests
+├── scripts/         # Build, seed, and migration scripts
+├── AGENT_RULES.md   # Engineering constitution — read before contributing
+└── README.md
+```
+
+---
+
+## Key Documentation
+
+| Document | Purpose |
+|---|---|
+| [AGENT_RULES.md](./AGENT_RULES.md) | Engineering constitution — all contributors must read |
+| [docs/PRD.md](./PRD.md) | Product requirements |
+| [docs/ARCHITECTURE.md](./ARCHITECTURE.md) | Technical architecture |
+| [docs/DESIGN.md](./DESIGN.md) | Design system and UI spec |
+| [docs/DECISIONS.md](./docs/DECISIONS.md) | Architectural decision records |
+| [docs/api/](./docs/api/) | API reference documentation |
+
+---
+
+## Contributing
+
+All contributors (human and AI) must read [AGENT_RULES.md](./AGENT_RULES.md) before making any change. It is the source of truth for how work is done in this repository.
+
+Branch strategy: `main` (production) → `dev` (integration) → `feature/*` (individual features).
+
+Commit convention: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:` prefixes (Conventional Commits).

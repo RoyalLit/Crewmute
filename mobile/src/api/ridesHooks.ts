@@ -48,6 +48,21 @@ export function useCreateRideMutation() {
   });
 }
 
+export function useUpdateRideMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateRideData> }) => {
+      return await apiClient.patch(`/rides/${id}`, data);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ride', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['rides'] });
+      queryClient.invalidateQueries({ queryKey: ['myRides'] });
+    },
+  });
+}
+
 export function useBrowseRidesQuery(filters: RideFilterData) {
   return useQuery({
     queryKey: ['rides', filters],
