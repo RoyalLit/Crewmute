@@ -82,7 +82,16 @@ export default function ExploreScreen(): React.JSX.Element {
           ListHeaderComponent={
             <View style={{ paddingTop: spacing.xl, paddingHorizontal: spacing.md, zIndex: 10, paddingBottom: spacing.lg }}>
               {Platform.OS === 'ios' && insets.top > 20 && (
-                <View style={[styles.easterEggContainer, { top: 15 }]} pointerEvents="none">
+                <View 
+                  style={[
+                    styles.easterEggContainer, 
+                    { 
+                      top: -insets.top + (insets.top > 50 ? 18 : 12),
+                      transform: [{ translateX: 25 }],
+                    }
+                  ]} 
+                  pointerEvents="none"
+                >
                   <Text style={[styles.easterEggText, { color: colors.interactive.primary }]}>🚗 beep beep!</Text>
                 </View>
               )}
