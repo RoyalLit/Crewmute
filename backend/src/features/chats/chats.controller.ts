@@ -28,6 +28,20 @@ export class ChatsController {
       next(error);
     }
   }
+
+  async getGroupChatHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as JwtPayload;
+      const { rideId } = req.params;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const skip = req.query.skip ? parseInt(req.query.skip as string) : 0;
+
+      const history = await chatsService.getGroupChatHistory(user.userId, rideId, limit, skip);
+      res.status(200).json({ success: true, data: history });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const chatsController = new ChatsController();

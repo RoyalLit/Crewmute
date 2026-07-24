@@ -21,6 +21,12 @@ router.put('/push-token', [
   body('pushToken').isString().isLength({ max: 255 }).withMessage('Invalid push token'),
   validate,
 ], asyncHandler(usersController.updatePushToken.bind(usersController)));
+router.put('/me/emergency-contacts', [
+  body('contacts').isArray({ max: 3 }).withMessage('Maximum 3 contacts allowed'),
+  body('contacts.*.name').isString().isLength({ min: 1, max: 100 }),
+  body('contacts.*.phone').isString().isLength({ min: 10, max: 20 }),
+  validate,
+], asyncHandler(usersController.updateEmergencyContacts.bind(usersController)));
 router.get('/:id', asyncHandler(usersController.getPublicProfile.bind(usersController)));
 router.post('/:id/reviews', asyncHandler(usersController.createReview.bind(usersController)));
 router.get('/:id/reviews', asyncHandler(usersController.getReviews.bind(usersController)));

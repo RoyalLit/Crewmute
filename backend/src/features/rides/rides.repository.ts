@@ -128,6 +128,33 @@ export class RidesRepository {
     return ride ? (ride as unknown as IRide) : null;
   }
 
+  async decrementAvailableSeats(id: string, session: ClientSession): Promise<IRide | null> {
+    const ride = await RideModel.findOneAndUpdate(
+      { _id: id, availableSeats: { $gt: 0 }, status: 'active' },
+      { $inc: { availableSeats: -1 } },
+      { new: true, session }
+    ).lean();
+    return ride ? (ride as unknown as IRide) : null;
+  }
+
+  async incrementAvailableSeats(id: string, session: ClientSession): Promise<IRide | null> {
+    const ride = await RideModel.findOneAndUpdate(
+      { _id: id, status: 'active' },
+      { $inc: { availableSeats: 1 } },
+      { new: true, session }
+    ).lean();
+    return ride ? (ride as unknown as IRide) : null;
+  }
+
+  async updateStatus(id: string, status: 'active' | 'cancelled' | 'in_progress' | 'completed', updateFields?: Partial<IRide>): Promise<IRide | null> {
+    const ride = await RideModel.findByIdAndUpdate(
+      id,
+      { status, ...updateFields },
+      { new: true }
+    ).lean();
+    return ride ? (ride as unknown as IRide) : null;
+  }
+
   async findByIds(ids: string[]): Promise<IRide[]> {
     const rides = await RideModel.find({ _id: { $in: ids } }).lean();
     return rides as unknown as IRide[];

@@ -20,7 +20,8 @@ export interface MessageResponseDTO {
   id: string;
   rideId: string;
   senderId: string;
-  receiverId: string;
+  receiverId?: string;
+  isGroupMessage?: boolean;
   content: string;
   readStatus: boolean;
   createdAt: string;

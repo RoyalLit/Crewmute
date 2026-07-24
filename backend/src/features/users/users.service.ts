@@ -82,6 +82,14 @@ export class UsersService {
     return this.formatUser(updatedUser);
   }
 
+  async updateEmergencyContacts(userId: string, contacts: Array<{ name: string, phone: string }>): Promise<UserResponseDTO> {
+    const updatedUser = await usersRepository.updateProfile(userId, { emergencyContacts: contacts } as any);
+    if (!updatedUser) {
+      throw new AppError('INTERNAL_ERROR', 'Failed to update emergency contacts', 500);
+    }
+    return this.formatUser(updatedUser);
+  }
+
   async updateStudentIdPhoto(userId: string, photoUrl: string): Promise<UserResponseDTO> {
     const updatedUser = await usersRepository.updateProfile(userId, {
       studentIdPhotoUrl: photoUrl,

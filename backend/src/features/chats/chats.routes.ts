@@ -11,6 +11,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', asyncHandler(chatsController.getMyChats.bind(chatsController)));
+router.get('/group/:rideId', asyncHandler(chatsController.getGroupChatHistory.bind(chatsController)));
 router.get('/:rideId/:otherUserId', asyncHandler(chatsController.getChatHistory.bind(chatsController)));
 
 export default router;

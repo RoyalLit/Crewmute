@@ -4,7 +4,7 @@ import { useTheme } from '../design/theme';
 import { brandColors } from '../design/tokens';
 import { typography } from '../design/typography';
 
-export type RideStatus = 'Active' | 'Pending' | 'Accepted' | 'Rejected' | 'Full' | 'Expired' | 'Cancelled' | 'active' | 'completed' | 'cancelled' | 'expired';
+export type RideStatus = 'Active' | 'Pending' | 'Accepted' | 'Rejected' | 'Full' | 'Expired' | 'Cancelled' | 'active' | 'in_progress' | 'completed' | 'cancelled' | 'expired';
 
 function hexToRGBA(hex: string, alpha: number) {
   if (!hex || hex.length < 7) return 'rgba(0,0,0,0.1)';
@@ -31,6 +31,10 @@ export function StatusChip({ status }: StatusChipProps) {
     case 'Active':
     case 'Accepted':
       textColor = brandColors.mintGreen;
+      break;
+    case 'In_progress':
+      displayStatus = 'In Progress' as any;
+      textColor = brandColors.amber;
       break;
     case 'Pending':
       textColor = brandColors.amber;

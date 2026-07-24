@@ -65,6 +65,24 @@ export class RidesController {
       next(error);
     }
   }
+
+  async startRide(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ride = await ridesService.startRide(req.params.id, req.user!.userId);
+      res.status(200).json(successResponse(ride));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async endRide(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ride = await ridesService.endRide(req.params.id, req.user!.userId);
+      res.status(200).json(successResponse(ride));
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const ridesController = new RidesController();

@@ -61,9 +61,21 @@ export class UsersController {
 
   async updatePushToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const user = req.user as JwtPayload;
       const { pushToken } = req.body;
-      const user = await usersService.updatePushToken(req.user!.userId, pushToken);
-      res.status(200).json(successResponse(user));
+      await usersService.updatePushToken(user.userId, pushToken);
+      res.status(200).json({ success: true, message: 'Push token updated' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateEmergencyContacts(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as JwtPayload;
+      const { contacts } = req.body;
+      await usersService.updateEmergencyContacts(user.userId, contacts);
+      res.status(200).json({ success: true, message: 'Emergency contacts updated' });
     } catch (error) {
       next(error);
     }

@@ -12,18 +12,20 @@ const extractCity = (loc: string): string => {
   return parts[0].trim();
 };
 
+interface Coordinate {
+  latitude: number;
+  longitude: number;
+  heading?: number;
+}
+
 interface RideMapProps {
   fromCity: string;
   toCity: string;
   stops?: string[];
+  currentLocation?: Coordinate | null;
 }
 
-interface Coordinate {
-  latitude: number;
-  longitude: number;
-}
-
-export function RideMap({ fromCity, toCity, stops = [] }: RideMapProps) {
+export function RideMap({ fromCity, toCity, stops = [], currentLocation }: RideMapProps) {
   const { colors, isDark } = useTheme();
   const mapRef = useRef<MapView>(null);
   
@@ -240,6 +242,20 @@ export function RideMap({ fromCity, toCity, stops = [] }: RideMapProps) {
           </View>
         </Marker>
 
+        {/* Live Location Marker */}
+        {currentLocation && (
+          <Marker 
+            coordinate={currentLocation} 
+            title="Live Location"
+            rotation={currentLocation.heading || 0}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View style={[styles.carMarker, { backgroundColor: brandColors.electricViolet }]}>
+              <Ionicons name="car" size={18} color="#FFF" />
+            </View>
+          </Marker>
+        )}
+
         {/* Base faint polyline (full route) */}
         {routeCoords.length > 1 && (
           <Polyline
@@ -288,6 +304,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  carMarker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 6,
   },
   stopMarkerContainer: {
     width: 24,

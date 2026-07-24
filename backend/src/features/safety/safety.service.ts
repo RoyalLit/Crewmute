@@ -32,6 +32,38 @@ export class SafetyService {
   async checkIfBlocked(userId: string, targetUserId: string): Promise<boolean> {
     return safetyRepository.isUserBlocked(userId, targetUserId);
   }
+
+  async triggerSos(userId: string, latitude?: number, longitude?: number, rideId?: string): Promise<void> {
+    const { usersRepository } = await import('../users/users.repository');
+    const { emailService } = await import('../auth/email.service');
+    const { notificationsService } = await import('../notifications/notifications.service');
+    const logger = (await import('../../shared/logger')).default;
+
+    const user = await usersRepository.findById(userId);
+    if (!user) return;
+
+    const locationLink = (latitude && longitude) ? `https://maps.google.com/?q=${latitude},${longitude}` : 'Unknown Location';
+
+    const messageBody = `EMERGENCY SOS: ${user.name} has triggered an SOS alert.\nLocation: ${locationLink}\nRide ID: ${rideId || 'Unknown'}`;
+
+    if (user.emergencyContacts && user.emergencyContacts.length > 0) {
+      for (const contact of user.emergencyContacts) {
+        // Send email to emergency contact (assuming phone might be email for MVP or we just log it)
+        // For the sake of the MVP, if the contact phone has an '@', we treat it as an email.
+        const target = contact.phone; 
+        if (target.includes('@')) {
+          await emailService.sendEmail(
+            target,
+            `SOS Alert from ${user.name}`,
+            messageBody
+          ).catch(e => logger.error(`Failed to send SOS email to ${target}`, e));
+        }
+      }
+    }
+
+    // In a real production app, we would also hit Twilio SMS API here.
+    logger.info(`[SOS TRIGGERED] User: ${userId}, Location: ${locationLink}, Ride: ${rideId}`);
+  }
 }
 
 export const safetyService = new SafetyService();

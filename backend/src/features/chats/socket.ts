@@ -103,7 +103,7 @@ export function initializeSockets(server: HttpServer): void {
       }
     });
 
-    socket.on('send_message', async (data: { rideId: string, receiverId: string, content: string }) => {
+    socket.on('send_message', async (data: { rideId: string, receiverId?: string, content: string }) => {
       try {
         if (!checkRateLimit(socket.id)) {
           socket.emit('message_error', { message: 'Rate limit exceeded. Please slow down.' });
@@ -133,23 +133,27 @@ export function initializeSockets(server: HttpServer): void {
           return;
         }
 
-        // Verify receiver is also a participant of this ride
-        const isReceiverPassenger = await requestsRepository.isAcceptedPassenger(data.rideId, data.receiverId);
-        const isReceiverPoster = ride?.posterId?.toString() === data.receiverId;
-        if (!isReceiverPoster && !isReceiverPassenger) {
-          socket.emit('message_error', { message: 'Recipient is not a participant of this ride.' });
-          return;
-        }
+        const isGroupMessage = !data.receiverId;
 
-        // Check if either user has blocked the other
-        const [isSenderBlocked, isReceiverBlocked] = await Promise.all([
-          safetyService.checkIfBlocked(data.receiverId, user.userId),
-          safetyService.checkIfBlocked(user.userId, data.receiverId)
-        ]);
+        if (!isGroupMessage) {
+          // Verify receiver is also a participant of this ride
+          const isReceiverPassenger = await requestsRepository.isAcceptedPassenger(data.rideId, data.receiverId as string);
+          const isReceiverPoster = ride?.posterId?.toString() === data.receiverId;
+          if (!isReceiverPoster && !isReceiverPassenger) {
+            socket.emit('message_error', { message: 'Recipient is not a participant of this ride.' });
+            return;
+          }
 
-        if (isSenderBlocked || isReceiverBlocked) {
-          socket.emit('message_error', { message: 'Cannot send message to this user.' });
-          return;
+          // Check if either user has blocked the other
+          const [isSenderBlocked, isReceiverBlocked] = await Promise.all([
+            safetyService.checkIfBlocked(data.receiverId as string, user.userId),
+            safetyService.checkIfBlocked(user.userId, data.receiverId as string)
+          ]);
+
+          if (isSenderBlocked || isReceiverBlocked) {
+            socket.emit('message_error', { message: 'Cannot send message to this user.' });
+            return;
+          }
         }
 
         // Sanitize message content: strip control characters
@@ -164,6 +168,7 @@ export function initializeSockets(server: HttpServer): void {
           rideId: data.rideId,
           senderId: user.userId,
           receiverId: data.receiverId,
+          isGroupMessage,
           content: sanitizedContent,
         });
 
@@ -171,23 +176,52 @@ export function initializeSockets(server: HttpServer): void {
           id: message._id.toString(),
           rideId: message.rideId.toString(),
           senderId: message.senderId.toString(),
-          receiverId: message.receiverId.toString(),
+          receiverId: message.receiverId?.toString(),
+          isGroupMessage: message.isGroupMessage,
           content: message.content,
           readStatus: message.readStatus,
           createdAt: message.createdAt.toISOString(),
         };
 
-        io.to(data.receiverId).emit('receive_message', messageDTO);
-        io.to(user.userId).emit('receive_message', messageDTO);
+        if (isGroupMessage) {
+          io.to(`ride_${data.rideId}`).emit('receive_message', messageDTO);
+        } else {
+          io.to(data.receiverId as string).emit('receive_message', messageDTO);
+          io.to(user.userId).emit('receive_message', messageDTO);
+        }
 
         try {
-          const [receiver, sender] = await Promise.all([
-            usersRepository.findById(data.receiverId),
-            usersRepository.findById(user.userId)
-          ]);
+          const sender = await usersRepository.findById(user.userId);
+          if (sender) {
+            if (isGroupMessage) {
+              // Group message: notify all passengers and poster EXCEPT sender
+              const passengers = await requestsRepository.getAcceptedPassengers(data.rideId);
+              const rideDoc = await ridesRepository.findById(data.rideId);
+              
+              const usersToNotify = new Set<string>();
+              if (rideDoc && rideDoc.posterId.toString() !== user.userId) {
+                usersToNotify.add(rideDoc.posterId.toString());
+              }
+              passengers.forEach(p => {
+                if (p.userId.toString() !== user.userId) {
+                  usersToNotify.add(p.userId.toString());
+                }
+              });
 
-          if (receiver?.expoPushToken && sender) {
-            notificationsService.notifyNewMessage(receiver.expoPushToken, sender.name, data.rideId, user.userId);
+              for (const uid of usersToNotify) {
+                const u = await usersRepository.findById(uid);
+                if (u?.expoPushToken) {
+                  notificationsService.notifyNewMessage(u.expoPushToken, `${sender.name} (Group)`, data.rideId, 'group');
+                }
+              }
+
+            } else {
+              // 1:1 message
+              const receiver = await usersRepository.findById(data.receiverId as string);
+              if (receiver?.expoPushToken) {
+                notificationsService.notifyNewMessage(receiver.expoPushToken, sender.name, data.rideId, user.userId);
+              }
+            }
           }
         } catch (pushErr) {
           logger.error(`Error sending push notification: ${String(pushErr)}`);
@@ -196,6 +230,39 @@ export function initializeSockets(server: HttpServer): void {
       } catch (error) {
         logger.error(`Error saving message: ${String(error)}`);
         return;
+      }
+    });
+
+    socket.on('send_location', async (data: { rideId: string, latitude: number, longitude: number, heading?: number }) => {
+      try {
+        if (!checkRateLimit(socket.id)) {
+          return;
+        }
+
+        // Verify sender is participant
+        const [ride, isPassenger] = await Promise.all([
+          ridesRepository.findById(data.rideId),
+          requestsRepository.isAcceptedPassenger(data.rideId, user.userId)
+        ]);
+        
+        const isPoster = ride?.posterId?.toString() === user.userId;
+        if (!isPoster && !isPassenger) {
+          return; // Unauthorised
+        }
+
+        const locationData = {
+          userId: user.userId,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          heading: data.heading,
+          timestamp: new Date().toISOString()
+        };
+
+        // Broadcast to ride group
+        io.to(`ride_${data.rideId}`).emit('receive_location', locationData);
+
+      } catch (error) {
+        logger.error(`Error sharing location: ${String(error)}`);
       }
     });
 

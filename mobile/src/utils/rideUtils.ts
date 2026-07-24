@@ -6,12 +6,13 @@ interface Ride {
   status?: string;
 }
 
-export const getDerivedRideStatus = (ride: Ride): 'active' | 'completed' | 'cancelled' | 'expired' => {
+export const getDerivedRideStatus = (ride: Ride): 'active' | 'in_progress' | 'completed' | 'cancelled' | 'expired' => {
   if (!ride) return 'active';
   
   if (ride.status === 'cancelled') return 'cancelled';
   if (ride.status === 'completed') return 'completed';
   if (ride.status === 'expired') return 'expired';
+  if (ride.status === 'in_progress') return 'in_progress';
 
   const depDate = ride.departureDate || ride.date;
   const depTime = ride.departureTime || ride.time;
@@ -21,11 +22,15 @@ export const getDerivedRideStatus = (ride: Ride): 'active' | 'completed' | 'canc
     const now = new Date().getTime();
     // 10 minutes past departure
     if (now > departureTimeMs + 10 * 60 * 1000) {
-      return 'completed';
+      // Should we auto-complete? Just keep as active/in_progress based on backend if we do real tracking
+      // but if the backend still says 'active' we could say expired.
+      if (ride.status === 'active') {
+        return 'expired';
+      }
     }
   }
 
-  return (ride.status || 'active') as 'active' | 'completed' | 'cancelled' | 'expired';
+  return (ride.status || 'active') as 'active' | 'in_progress' | 'completed' | 'cancelled' | 'expired';
 };
 
 export const formatDate = (dateString: string): string => {

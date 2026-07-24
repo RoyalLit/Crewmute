@@ -166,31 +166,77 @@ export class RidesService {
     return this.formatRide(updatedRide);
   }
 
-  async cancelRide(id: string, userId: string): Promise<void> {
+  async cancelRide(id: string, posterId: string): Promise<void> {
     const ride = await ridesRepository.findById(id);
+    
     if (!ride) {
       throw new NotFoundError('Ride', id);
     }
-
-    if (ride.posterId.toString() !== userId) {
-      throw new ForbiddenError('cancel this ride');
+    
+    if (ride.posterId.toString() !== posterId) {
+      throw new ForbiddenError('Not authorized to cancel this ride');
     }
 
-    await ridesRepository.updateRide(id, { status: 'cancelled' });
+    if (ride.status === 'cancelled') {
+      throw new AppError('BAD_REQUEST', 'Ride is already cancelled', 400);
+    }
 
-    // Notify accepted requesters
-    try {
-      const acceptedRequests = await requestsRepository.findByRideIdAndStatus(id, 'accepted');
-      const poster = await usersService.getPublicProfile(userId);
-      for (const req of acceptedRequests) {
-        const requester = await usersRepository.findById(req.requesterId.toString());
-        if (requester?.expoPushToken) {
-          notificationsService.notifyRideCancelled(requester.expoPushToken, ride.toCity, poster.name);
+    // Optional: Only allow cancellation if ride hasn't departed yet (simplification for MVP)
+    const departureTime = new Date(`${ride.departureDate}T${ride.departureTime}:00`);
+    if (departureTime < new Date()) {
+       throw new AppError('BAD_REQUEST', 'Cannot cancel a ride after departure time', 400);
+    }
+
+    const updatedRide = await ridesRepository.updateStatus(id, 'cancelled');
+
+    if (updatedRide) {
+      const requests = await requestsRepository.findByRideIdAndStatus(id, 'accepted');
+      const passengerIds = requests.map(req => req.requesterId.toString());
+      
+      const passengers = await usersRepository.findByIds(passengerIds);
+      
+      for (const passenger of passengers) {
+        if (passenger.expoPushToken) {
+           notificationsService.notifyRideCancelled(
+             passenger.expoPushToken, 
+             updatedRide.toCity, 
+             'Poster' 
+           );
         }
       }
-    } catch (error) {
-      // Non-critical — notification failure shouldn't block cancellation
     }
+  }
+
+  async startRide(id: string, posterId: string): Promise<RideResponseDTO> {
+    const ride = await ridesRepository.findById(id);
+    if (!ride) throw new NotFoundError('Ride', id);
+    if (ride.posterId.toString() !== posterId) {
+      throw new ForbiddenError('Not authorized to start this ride');
+    }
+    if (ride.status !== 'active') {
+      throw new AppError('BAD_REQUEST', `Cannot start a ride with status: ${ride.status}`, 400);
+    }
+
+    const updatedRide = await ridesRepository.updateStatus(id, 'in_progress', { startedAt: new Date() });
+    if (!updatedRide) throw new AppError('INTERNAL_ERROR', 'Failed to start ride', 500);
+
+    return this.formatRide(updatedRide);
+  }
+
+  async endRide(id: string, posterId: string): Promise<RideResponseDTO> {
+    const ride = await ridesRepository.findById(id);
+    if (!ride) throw new NotFoundError('Ride', id);
+    if (ride.posterId.toString() !== posterId) {
+      throw new ForbiddenError('Not authorized to end this ride');
+    }
+    if (ride.status !== 'in_progress') {
+      throw new AppError('BAD_REQUEST', `Cannot end a ride with status: ${ride.status}`, 400);
+    }
+
+    const updatedRide = await ridesRepository.updateStatus(id, 'completed', { completedAt: new Date() });
+    if (!updatedRide) throw new AppError('INTERNAL_ERROR', 'Failed to end ride', 500);
+
+    return this.formatRide(updatedRide);
   }
 }
 

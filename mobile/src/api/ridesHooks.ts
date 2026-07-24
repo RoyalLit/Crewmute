@@ -123,3 +123,31 @@ export function useCancelRideMutation() {
     },
   });
 }
+
+export function useStartRideMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return await apiClient.post(`/rides/${id}/start`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ride', variables] });
+      queryClient.invalidateQueries({ queryKey: ['myRides'] });
+    },
+  });
+}
+
+export function useEndRideMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      return await apiClient.post(`/rides/${id}/end`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ride', variables] });
+      queryClient.invalidateQueries({ queryKey: ['myRides'] });
+    },
+  });
+}

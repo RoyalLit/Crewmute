@@ -1,287 +1,186 @@
-
 CREWMUTE
 Campus Carpool App
 
-
 Product Requirements Document
-Version 1.0  •  June 2026
+Version 2.0  •  July 2026
 Pahul  •  Amity University Punjab
 
 CONFIDENTIAL — INTERNAL USE ONLY
- 
-1. Executive Summary
+
+---
+
+## 1. Executive Summary
 Crewmute is a mobile-first carpool platform designed specifically for Indian college students who travel home on weekends and holidays. Students currently rely on fragmented WhatsApp groups and personal networks to find co-passengers for shared cabs — a process that is slow, unreliable, and limited to existing contacts.
 
-Crewmute solves this by providing a structured, trusted platform where students can post rides or browse available seats, coordinate with verified co-passengers, and split cab costs transparently — all from a single mobile app.
+Crewmute solves this by providing a structured, trusted platform where students can post rides or browse available seats, coordinate with verified co-passengers, split cab costs transparently via direct UPI payments, and travel safely with live tracking and SOS features — all from a single mobile app.
 
-Problem Statement
+**Problem Statement**
 Every weekend, thousands of Indian college students travel home via shared cabs. Finding co-passengers today means posting in WhatsApp groups, waiting for responses, coordinating manually, and hoping the timing aligns. There is no dedicated product for this specific use case — intercity student travel to home cities on weekends and holidays.
 
-Solution
-A React Native mobile app (Android + iOS) with a Node.js/Express/MongoDB backend, enabling students to post rides, browse matches by route and date, request seats, coordinate via in-app chat, and split costs transparently.
+**Solution**
+A comprehensive full-stack ecosystem:
+1. **Mobile App (React Native/Expo)** for students (iOS/Android) to discover rides, coordinate, and pay.
+2. **Backend API (Node.js/Express/MongoDB)** to power the platform.
+3. **Web Admin Dashboard** for platform moderators to verify student IDs and manage users/rides.
 
-Target Users
-•	Indian college students aged 18–24
-•	Traveling intercity to home cities on weekends and public holidays
-•	Using shared cabs (not personal vehicles) as the primary mode
-•	Seeking to reduce cost and find trusted co-passengers
+**Target Users**
+- Indian college students aged 18–24
+- Traveling intercity to home cities on weekends and public holidays
+- Seeking to reduce cost and find trusted co-passengers
 
- 
-2. Goals & Success Metrics
-2.1 Product Goals
-•	Enable students to find verified co-passengers for intercity weekend travel
-•	Reduce per-person cab cost through transparent fare splitting
-•	Build a trusted community through college-based identity verification
-•	Deliver a polished, production-quality mobile app for portfolio and internship impact
+---
 
-2.2 Learning Goals
-•	Build a complete REST API from scratch using Node.js, Express, and MongoDB
-•	Learn React Native and Expo end-to-end with real-world complexity
-•	Implement real-time features using Socket.io
-•	Integrate third-party services: Google Maps, Expo Push Notifications, Cloudinary
-•	Practice proper DevOps: Railway deployment, GitHub branching, environment management
+## 2. Goals & Success Metrics
 
-2.3 Success Metrics (MVP)
-Metric	Target	Timeframe
-Test users (beta)	25–50 students	Week 6
-Rides posted	20+ in first week	Post-launch
-Successful matches	10+ confirmed rides	Post-launch
-App crash rate	< 1%	Ongoing
-API response time	< 300ms (p95)	Ongoing
+**2.1 Product Goals**
+- Enable students to find verified co-passengers for intercity weekend travel.
+- Facilitate seamless P2P payments (UPI deep linking) to reduce friction in cost splitting.
+- Ensure passenger safety with Live Ride Tracking, SOS features, and strict student verification.
+- Deliver a premium, production-ready product ready for public launch.
 
-3. Scope
-3.1 In Scope (MVP)
-Authentication & Onboarding
-•	Register with college email (auto-verified via email OTP)
-•	Fallback: student ID photo upload for colleges without institutional email
-•	Profile setup: name, college, home city, profile photo
-•	JWT-based session management with refresh tokens
+**2.2 Technical Goals**
+- Build a complete, scalable REST API using Node.js, Express, and MongoDB.
+- Deliver a performant React Native application using Expo and NativeWind.
+- Implement real-time features using Socket.io (Chats, Live Location).
+- Build a secure, decoupled Web Admin Dashboard for moderation.
 
-Ride Posting
-•	Post a ride: from city, to city, date, departure time, total seats, cab type
-•	Set fare per seat (manual input with cost split calculator helper)
-•	Edit or cancel a posted ride
-•	Ride expires automatically after departure time
+---
 
-Ride Discovery
-•	Browse rides filtered by route (from + to) and date
-•	Search with city autocomplete (Google Places API)
-•	View ride card: poster's college, home city, seats left, fare, departure time
-•	View poster's profile before requesting
+## 3. Product Scope
 
-Ride Requests
-•	Request to join a ride (seats pending acceptance)
-•	Poster accepts or rejects requests
-•	Push notification on request, acceptance, or rejection
-•	Seat count updates in real time after acceptance
+### 3.1 Authentication & Trust (Core)
+- Register with college email (auto-verified via email OTP).
+- Fallback: Upload student ID photo for manual admin verification (via Web Dashboard).
+- Profile setup: name, college, home city, profile photo.
+- Reviews and ratings for users to build a trust system.
 
-In-App Chat
-•	One-on-one chat between matched riders (post-acceptance only)
-•	Real-time messaging via Socket.io
-•	Basic chat: text messages, timestamps, read receipts
+### 3.2 Ride Management & Discovery
+- **Post Ride:** Specify route, date, time, total seats, cab type, and fare per seat.
+- **Search:** Browse rides filtered by route and date with Google Places autocomplete.
+- **Auto-expiration:** Rides automatically expire after the departure time.
 
-Cost Split Calculator
-•	Input total cab fare, auto-calculates per-person share
-•	Displayed on ride card and in chat for reference
-•	No in-app payment processing — settlement happens offline
+### 3.3 Ride Requests & Coordination
+- **Requests:** Requesters send seat requests; Posters accept or reject.
+- **Seat Counter:** Real-time seat updates upon acceptance.
+- **Group Chat:** 1:1 chat before the ride is fully booked, evolving into a Group Chat for rides with 3+ passengers to coordinate pickups.
 
-3.2 Out of Scope (MVP)
-•	In-app payments or UPI integration
-•	Driver/cab booking functionality
-•	Ratings and reviews
-•	Group rides with more than one cab
-•	Ride tracking / live GPS
-•	Web version
-•	Admin dashboard
+### 3.4 Payments
+- **Cost Split Calculator:** Auto-calculates per-person share.
+- **P2P UPI Deep Linking:** Direct "Pay via UPI" button in the app that opens the user's installed UPI app (GPay, PhonePe, Paytm) pre-filled with the poster's `upiId` and exact fare. *No merchant onboarding required.*
 
- 
-4. User Personas
-Persona 1 — The Weekend Traveler
-Name	Arjun, 20
-College	Amity University Punjab
-Home	Delhi
-Problem	Travels home every 2–3 weekends. WhatsApp groups are chaotic. Pays ₹800 solo vs ₹200 shared.
-Goal	Find 2–3 co-passengers heading to Delhi on Friday evening without the hassle.
+### 3.5 Safety & Tracking
+- **Live Ride Tracking:** Integration with Google Maps to share and view real-time cab location.
+- **SOS / Emergency Contacts:** In-app SOS button to instantly alert pre-saved emergency contacts and campus authorities with the user's live location and ride details.
 
-Persona 2 — The Holiday Planner
-Name	Priya, 21
-College	Chandigarh University
-Home	Ludhiana
-Problem	Plans travel 3–4 days in advance. Wants to know co-passengers are verified students.
-Goal	Book a confirmed seat early, know who she's traveling with, split the cost fairly.
+### 3.6 Moderation & Administration
+- **Web Admin Dashboard:** A standalone React/Next.js web application for admins.
+- **Capabilities:** Approve/Reject manual Student ID uploads, view platform metrics, manage reported users, and oversee active SOS alerts.
 
-5. Feature Requirements
-5.1 Authentication
-#	Feature	Description	Priority
-F01	Email Registration	Register with college email, OTP verification via Nodemailer	P0
-F02	ID Fallback	Upload student ID photo for colleges without institutional email	P0
-F03	JWT Auth	Access + refresh token pair, 15min access / 7d refresh	P0
-F04	Profile Setup	Name, college, home city, profile photo (Cloudinary)	P0
-F05	Logout	Invalidate refresh token on logout	P0
+---
 
-5.2 Ride Management
-#	Feature	Description	Priority
-F06	Post Ride	From, to, date, time, seats, fare per seat, cab type	P0
-F07	Edit Ride	Update seat count or fare before any requests	P1
-F08	Cancel Ride	Cancel ride, notify all pending/accepted requestors	P0
-F09	Auto-expire	Rides auto-expire after departure datetime	P1
-F10	My Rides	View rides posted and rides joined	P0
+## 4. User Personas
 
-5.3 Ride Discovery
-#	Feature	Description	Priority
-F11	Browse Feed	Paginated list of active rides, newest first	P0
-F12	Route Filter	Filter by from city + to city	P0
-F13	Date Filter	Filter by travel date	P0
-F14	City Autocomplete	Google Places API for city input fields	P0
-F15	Ride Detail View	Full ride info + poster's college profile	P0
+**Persona 1 — The Weekend Traveler (Driver/Cab Booker)**
+- **Name:** Arjun, 20
+- **Problem:** Travels home every 2–3 weekends. Books a cab for ₹3000 but struggles to find people to split the cost on WhatsApp.
+- **Goal:** Post a ride, get 3 co-passengers, automatically collect their share via UPI.
 
-5.4 Requests & Matching
-#	Feature	Description	Priority
-F16	Send Request	Request a seat on a ride (status: pending)	P0
-F17	Accept/Reject	Poster accepts or rejects each request	P0
-F18	Seat Counter	Available seats decrement on acceptance in real time	P0
-F19	Request Status	Requester sees pending / accepted / rejected status	P0
-F20	Withdraw Request	Requester can withdraw a pending request	P1
+**Persona 2 — The Holiday Planner (Passenger)**
+- **Name:** Priya, 21
+- **Problem:** Plans travel 3–4 days in advance. Safety is a priority; she wants to know her co-passengers are verified students.
+- **Goal:** Book a confirmed seat early, know who she's traveling with, and share her live location with her parents.
 
-5.5 Chat & Notifications
-#	Feature	Description	Priority
-F21	In-App Chat	Real-time 1:1 chat between matched riders via Socket.io	P0
-F22	Push Notifications	Notify on: new request, acceptance, rejection, message	P0
-F23	Read Receipts	Show message read status	P1
-F24	Cost Calculator	Auto-calculates per-person share shown in ride detail	P0
+**Persona 3 — The Moderator (Admin)**
+- **Name:** Rahul, 23 (Campus Ambassador / Admin)
+- **Problem:** Needs an efficient way to verify users who don't have `.edu.in` emails.
+- **Goal:** Log into the Web Dashboard, review pending student ID cards, and approve them with one click.
 
-Priority Legend:
-•	P0 — Must have for MVP launch
-•	P1 — Should have, included if time permits
-•	P2 — Future release
+---
 
- 
-6. Tech Stack
-6.1 Mobile (Frontend)
-Technology	Version	Purpose
-React Native	0.74+	Cross-platform mobile framework
-Expo	SDK 51+	Build tooling, EAS builds, OTA updates
-Expo Router	v3	File-based navigation
-NativeWind	v4	Tailwind CSS utility classes for RN
-Socket.io Client	4.x	Real-time chat connection
-Expo Notifications	latest	Push notification handling
-Google Maps SDK	RN Maps	City search + route preview
-expo-blur	SDK 51+ compatible	iOS Liquid Glass tab bar blur effect.
+## 5. Feature Requirements & Technical Details
 
-6.2 Backend
-Technology	Version	Purpose
-Node.js	20 LTS	Runtime
-Express.js	4.x	REST API framework
-MongoDB	7.x	Primary database
-Mongoose	8.x	ODM for MongoDB
-Socket.io	4.x	Real-time WebSocket server
-JWT + bcrypt	latest	Auth — access/refresh tokens + password hashing
-Nodemailer	latest	OTP email delivery
-Cloudinary SDK	latest	Profile photo storage
+### 5.1 Mobile App Features
 
-6.3 Infrastructure & DevOps
-Tool	Plan	Purpose
-Railway	Hobby (free)	Backend deployment
-MongoDB Atlas	Free tier	Cloud database
-Cloudinary	Free tier	Media storage
-Expo EAS	Free tier	APK + IPA builds
-GitHub Actions	Free	CI pipeline on push
-Postman	Free	API testing & documentation
+| Feature | Description | Status |
+|---|---|---|
+| **Auth & Profiles** | Email OTP registration, JWT sessions, Cloudinary avatar uploads. | ✅ Completed |
+| **Student Verification**| Users without college emails upload their ID for admin review. | 🟡 In Progress |
+| **Ride CRUD** | Post, Edit, Cancel rides. Auto-expire rides after departure. | ✅ Completed |
+| **Ride Discovery** | Filter by Route/Date. Google Places Autocomplete. | ✅ Completed |
+| **Requests Engine** | Send, Accept, Reject, Withdraw requests. Real-time seat counts. | ✅ Completed |
+| **UPI Payments** | Direct P2P UPI payments via `upi://pay` deep linking. | ✅ Completed |
+| **Chat System** | 1:1 messaging via Socket.io. Read receipts. | ✅ Completed |
+| **Group Chats** | Multi-user chat rooms for accepted passengers on a single ride. | ⏳ Planned |
+| **SOS System** | One-tap emergency alert sharing live location via SMS/WhatsApp. | ⏳ Planned |
+| **Live Tracking** | Real-time GPS broadcasting from Poster to Passengers. | ⏳ Planned |
 
-7. User Flows
-7.1 Onboarding Flow
-•	App launch → Splash screen → Login / Register screen
-–	Register: Enter name, college email → Receive OTP → Verify → Set password
-–	Fallback: No college email → Upload student ID photo → Manual approval (simple flag in DB)
-•	Profile setup: Upload photo (optional) → Set home city → Done → Home feed
+### 5.2 Web Admin Dashboard Features
 
-7.2 Post a Ride Flow
-•	Tap '+' on home screen → Post Ride form
-–	From city (autocomplete) → To city (autocomplete) → Date picker → Time picker
-–	Total seats → Fare per seat (calculator shown) → Cab type (optional) → Submit
-•	Ride appears in feed immediately → Poster receives confirmation notification
+| Feature | Description | Priority |
+|---|---|---|
+| **Admin Login** | Secure login for staff/moderators (Role-Based Access). | P0 |
+| **ID Verification Queue**| Table view of pending user registrations awaiting Student ID approval. | P0 |
+| **User Management** | View, suspend, or ban users for community guideline violations. | P1 |
+| **Ride Oversight** | View active rides, historical rides, and platform statistics. | P1 |
 
-7.3 Find & Join a Ride Flow
-•	Home feed → Filter by route + date → Browse ride cards
-•	Tap ride card → Ride detail screen → View poster profile → Tap 'Request Seat'
-•	Notification sent to poster → Poster accepts/rejects → Requester notified
-•	On acceptance: chat unlocked between matched riders
+---
 
-7.4 Manage Requests Flow (Poster)
-•	Notification: 'New request from [Name]' → Tap → View requester profile
-•	Accept or Reject → Seat count updates → Chat opened on accept
+## 6. Tech Stack
 
- 
-8. Non-Functional Requirements
-8.1 Performance
-•	API response time: < 300ms for 95th percentile under normal load
-•	App cold start: < 3 seconds on mid-range Android device
-•	Real-time message delivery: < 500ms latency
-•	Tab bar BlurView must not be rendered on Android — gated with Platform.OS === 'ios'. Android solid fallback must not cause jank on Snapdragon 680-class devices (target: 0 dropped frames during tab switch).
+### 6.1 Mobile (Frontend)
+- **Framework:** React Native 0.74+ / Expo SDK 51+
+- **Styling:** NativeWind v4 (Tailwind CSS)
+- **Navigation:** Expo Router v3
+- **State Management:** Zustand, React Query
+- **Maps/Location:** `react-native-maps`, `expo-location`
+- **Real-time:** `socket.io-client`
 
-8.2 Security
-•	All passwords hashed with bcrypt (salt rounds: 12)
-•	JWT access tokens expire in 15 minutes
-•	Refresh tokens stored in httpOnly cookies on web; secure storage on mobile
-•	All API routes protected with auth middleware except register/login
-•	Input validation on all endpoints using express-validator
-•	Rate limiting on auth endpoints (express-rate-limit)
+### 6.2 Backend (API)
+- **Runtime:** Node.js 20 LTS
+- **Framework:** Express.js
+- **Database:** MongoDB 7.x + Mongoose
+- **Real-time:** Socket.io
+- **Auth:** JWT (Access/Refresh), bcrypt
 
-8.3 Reliability
-•	Zero-downtime deployments via Railway
-•	MongoDB Atlas automatic backups (free tier: daily)
-•	Error logging via console.error → upgrade to Sentry post-MVP
+### 6.3 Web Admin Dashboard
+- **Framework:** React + Next.js (or Vite)
+- **Styling:** Tailwind CSS / shadcn-ui
+- **State:** React Query
 
-8.4 Compatibility
-•	Android: 8.0+ (API 26+)
-•	iOS: 14.0+
-•	Screen sizes: 5" – 6.7" phones, portrait mode primary
-•	Liquid Glass blur tab bar requires iOS 15+ (BlurView systemChromeMaterial tint). On iOS 14 — which is in scope — fall back to the Android solid style. Gate with Platform.Version.
+### 6.4 Infrastructure & APIs
+- **Hosting:** Railway (Backend), Vercel (Admin Web)
+- **Database:** MongoDB Atlas
+- **Storage:** Cloudinary (Images)
+- **External APIs:** Google Places API, Google Maps Directions API
 
-9. Build Timeline
-Total: 6 weeks at 20+ hours/week.
+---
 
-Week	Phase	Deliverables
-1	Backend Core	Project setup, Express boilerplate, MongoDB connection, Auth endpoints (register, login, OTP, refresh, logout), JWT middleware, Postman collection
-2	Backend Features	Ride CRUD endpoints, Request endpoints, User profile endpoints, Cloudinary integration, Input validation, Rate limiting, GitHub Actions CI
-3	Mobile Foundation	Expo project setup, Expo Router navigation, NativeWind config, Auth screens (register, login, OTP), Profile setup screen, API integration (Axios)
-4	Mobile Core	Home feed, Ride detail, Post ride form, Request flow, My rides screen, Google Places autocomplete, Cost calculator UI
-5	Real-time & Polish	Socket.io chat, Push notifications (Expo), Read receipts, Error states, Loading skeletons, Edge case handling
-6	Ship	EAS build (APK + IPA), Railway backend deploy, MongoDB Atlas production setup, README, demo video, GitHub cleanup
+## 7. Build Timeline & Roadmap
 
- 
-10. Risks & Mitigations
-Risk	Likelihood	Mitigation
-React Native learning curve delays mobile build	High	Start with Expo, use NativeWind for familiar syntax, mock API in Week 3
-Google Maps API billing	Medium	Use Places autocomplete only (low call volume), set billing alert at $0
-College email not available for all Indian students	High	Student ID fallback implemented as P0
-Socket.io complexity on mobile	Medium	Use Expo managed workflow, test on real device from day one
-Railway free tier cold starts	Low	Add keep-alive ping via cron job or UptimeRobot (free)
-BlurView performance on Android mid-range devices.	Medium	BlurView is iOS-only in implementation. Android uses a solid semi-opaque fallback. No BlurView code path executes on Android.
+**Phase 1: Foundation & P2P UPI (Completed)**
+- Core API & Database.
+- Mobile Auth, Ride Discovery, Request Engine, and 1:1 Chat.
+- Direct P2P UPI Payments via Deep Linking.
 
-11. Future Roadmap (Post-MVP)
-v1.1
-•	Ratings and reviews for riders
-•	Ride history with basic stats
-•	Gender preference filter (opt-in)
+**Phase 2: Group Chats & SOS (Upcoming)**
+- Upgrade Socket.io backend to support multi-user rooms.
+- Implement Mobile UI for Group Chats.
+- Implement SOS button and emergency contact saving.
 
-v1.2
-•	In-app UPI payment via Razorpay
-•	Verified college badge system
-•	Group chat for rides with 3+ passengers
+**Phase 3: Live Ride Tracking (Upcoming)**
+- Background location tracking (Poster).
+- Real-time location broadcasting via Socket.io.
+- Map UI for passengers to track the ride.
 
-v2.0
-•	Live ride tracking via Google Maps
-•	Emergency contact sharing feature
-•	Admin dashboard for moderation
-•	iOS App Store + Google Play Store submission
+**Phase 4: Web Admin Dashboard (Upcoming)**
+- Initialize React/Next.js web app.
+- Implement Admin Auth & RBAC in backend.
+- Build Student ID Verification queue and User Management tools.
 
-12. Competitive Landscape
-App	Target	Model	Gap Crewmute Fills
-BlaBlaCar	General public	Driver-owned cars	No student-specific trust model, not built for shared cabs
-QuickRide	Office commuters	Daily carpool	Not designed for intercity weekend/holiday travel
-sRide	Professionals	Office carpools	Corporate-focused, not student-centric
-WhatsApp Groups	Everyone	Manual coordination	No structure, no verification, no seat management
+---
 
-Crewmute's differentiation: the only platform built specifically for Indian college students doing intercity travel home on weekends and holidays, with college-based identity verification and shared cab coordination as core features.
+## 8. Non-Functional Requirements
 
+- **Performance:** API response time < 300ms. Mobile app should maintain 60fps, especially on Map screens.
+- **Security:** All endpoints protected by JWT. Web Admin uses strict RBAC (Role-Based Access Control). Passwords hashed with bcrypt.
+- **Reliability:** Socket connections must handle reconnects gracefully during mobile network drops (e.g., when a train passes through a tunnel or on the highway).

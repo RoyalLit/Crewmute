@@ -23,7 +23,8 @@ export interface MessageResponseDTO {
   id: string;
   rideId: string;
   senderId: string;
-  receiverId: string;
+  receiverId?: string;
+  isGroupMessage?: boolean;
   content: string;
   readStatus: boolean;
   createdAt: string;
@@ -44,6 +45,20 @@ export const useChatHistory = (rideId: string, otherUserId: string) => {
     queryKey: ['chat', rideId, otherUserId],
     queryFn: async ({ pageParam = 0 }): Promise<MessageResponseDTO[]> => {
       const { data } = await apiClient.get(`/chats/${rideId}/${otherUserId}?skip=${pageParam}&limit=20`);
+      return data.data;
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 20 ? allPages.length * 20 : undefined;
+    },
+  });
+};
+
+export const useGroupChatHistory = (rideId: string) => {
+  return useInfiniteQuery({
+    queryKey: ['chat', 'group', rideId],
+    queryFn: async ({ pageParam = 0 }): Promise<MessageResponseDTO[]> => {
+      const { data } = await apiClient.get(`/chats/group/${rideId}?skip=${pageParam}&limit=20`);
       return data.data;
     },
     initialPageParam: 0,

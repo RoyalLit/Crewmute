@@ -15,7 +15,9 @@ export interface IRide extends Document {
   farePerSeat: number;
   cabType: 'Hatchback' | 'Sedan' | 'SUV' | 'MUV' | 'Any' | 'Other';
   genderPreference: 'ANY' | 'SAME_GENDER';
-  status: 'active' | 'cancelled' | 'expired' | 'full';
+  status: 'active' | 'cancelled' | 'expired' | 'full' | 'in_progress' | 'completed';
+  startedAt?: Date;
+  completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,10 +49,12 @@ const rideSchema = new Schema<IRide>(
     status: {
       type: String,
       required: true,
-      enum: ['active', 'cancelled', 'expired'],
+      enum: ['active', 'cancelled', 'expired', 'full', 'in_progress', 'completed'],
       default: 'active',
       index: true,
     },
+    startedAt: { type: Date },
+    completedAt: { type: Date },
   },
   {
     timestamps: true,

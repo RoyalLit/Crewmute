@@ -11,6 +11,15 @@ export const useReportUserMutation = () => {
   });
 };
 
+export const useTriggerSosMutation = () => {
+  return useMutation({
+    mutationFn: async (data: { latitude?: number; longitude?: number; rideId?: string }) => {
+      const response = await apiClient.post('/safety/sos', data);
+      return response.data;
+    },
+  });
+};
+
 export const useBlockUserMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

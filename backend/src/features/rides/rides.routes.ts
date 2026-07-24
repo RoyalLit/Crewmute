@@ -16,6 +16,8 @@ router.get('/', rideFilterValidator, validate, asyncHandler(ridesController.brow
 router.get('/me', asyncHandler(ridesController.getMyRides.bind(ridesController)));
 router.get('/:id', asyncHandler(ridesController.getRideDetails.bind(ridesController)));
 router.patch('/:id', updateRideValidator, validate, asyncHandler(ridesController.updateRide.bind(ridesController)));
+router.post('/:id/start', asyncHandler(ridesController.startRide.bind(ridesController)));
+router.post('/:id/end', asyncHandler(ridesController.endRide.bind(ridesController)));
 router.delete('/:id', asyncHandler(ridesController.cancelRide.bind(ridesController)));
 
 export default router;

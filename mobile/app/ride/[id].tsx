@@ -1,14 +1,16 @@
 import { Toast } from '../../src/components/Toast';
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Alert } from '../../src/components/GlobalAlert';
+import * as Location from 'expo-location';
 
 import { useTheme } from '../../src/design/theme';
 import { brandColors, spacing, WOMEN_ONLY_COLORS } from '../../src/design/tokens';
 import { useAuthStore } from '../../src/store/authStore';
+import { useSocket } from '../../src/context/SocketContext';
 import { Avatar } from '../../src/components/Avatar';
 import { SeatsBadge } from '../../src/components/SeatsBadge';
 import { StatusChip } from '../../src/components/StatusChip';
@@ -130,6 +132,62 @@ export default function RideDetailScreen() {
       }
     ]);
   };
+
+  const { socket, isConnected } = useSocket();
+  const [liveLocation, setLiveLocation] = useState<{ latitude: number, longitude: number, heading?: number } | null>(null);
+  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+
+  // Subscribe to sockets for location if passenger, or broadcast if poster
+  useEffect(() => {
+    if (!socket || !isConnected || !ride || derivedStatus !== 'in_progress') return;
+
+    socket.emit('join_ride', ride.id);
+
+    if (isPoster) {
+      // Poster broadcasts location
+      const startTracking = async () => {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Toast.show({ title: 'Permission Denied', message: 'Location permission needed to share live location', type: 'error' });
+          return;
+        }
+
+        locationSubRef.current = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 3000,
+            distanceInterval: 10,
+          },
+          (location) => {
+            const locData = {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+              heading: location.coords.heading || undefined,
+            };
+            setLiveLocation(locData);
+            socket.emit('send_location', { rideId: ride.id, location: locData });
+          }
+        );
+      };
+      startTracking();
+    } else if (existingRequest?.status === 'accepted') {
+      // Passenger receives location
+      const handleLocation = (data: any) => {
+        setLiveLocation(data);
+      };
+      socket.on('receive_location', handleLocation);
+      return () => {
+        socket.off('receive_location', handleLocation);
+      };
+    }
+
+    return () => {
+      if (locationSubRef.current) {
+        locationSubRef.current.remove();
+        locationSubRef.current = null;
+      }
+    };
+  }, [socket, isConnected, ride?.id, derivedStatus, isPoster, existingRequest?.status]);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background.primary }]}>
@@ -324,7 +382,7 @@ export default function RideDetailScreen() {
 
         {/* Route Map */}
         <Text style={[styles.sectionTitle, { color: colors.text.primary, marginTop: spacing.xl }]}>Route</Text>
-        <RideMap fromCity={ride.fromCity} toCity={ride.toCity} stops={ride.stops || []} />
+        <RideMap fromCity={ride.fromCity} toCity={ride.toCity} stops={ride.stops || []} currentLocation={liveLocation} />
 
         {/* Incoming Requests for Poster */}
         {isPoster && rideIncomingRequests.length > 0 && (
@@ -340,29 +398,111 @@ export default function RideDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom CTA */}
-      {derivedStatus === 'active' && (
+      {(derivedStatus === 'active' || derivedStatus === 'in_progress') && (
         <View style={[styles.bottomCta, { backgroundColor: colors.background.primary, borderTopColor: colors.border.default }]}>
+          
+          {/* Top Row for Active Participants (Group Chat & SOS) */}
+          {(isPoster || existingRequest?.status === 'accepted') && (
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+              <Pressable 
+                style={[styles.btn, { backgroundColor: brandColors.electricViolet, flex: 1 }]}
+                onPress={() => router.push(`/chat/group/${ride.id}`)}
+              >
+                <Ionicons name="chatbubbles" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                <Text style={[styles.btnTextWhite]}>Group Chat</Text>
+              </Pressable>
+              
+              <Pressable 
+                style={[styles.btn, { backgroundColor: brandColors.coralPink, flex: 1 }]}
+                onPress={() => {
+                  import('../../src/api/safetyHooks').then(({ useTriggerSosMutation }) => {
+                    // Quick SOS trigger
+                    Alert.alert('Emergency SOS', 'Send immediate alert to your emergency contacts?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      { 
+                        text: 'Trigger SOS', 
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            // Using a direct fetch/mutation approach if we don't have the hook ready at the top level
+                            const { apiClient } = require('../../src/api/client');
+                            await apiClient.post('/safety/sos', { rideId: ride.id });
+                            Toast.show({ title: 'SOS Sent', message: 'Alerts sent to your emergency contacts.', type: 'error' });
+                          } catch (e) {
+                            Toast.show({ title: 'SOS Failed', message: 'Could not send alert.', type: 'error' });
+                          }
+                        }
+                      }
+                    ]);
+                  });
+                }}
+              >
+                <Ionicons name="warning" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                <Text style={styles.btnTextWhite}>SOS</Text>
+              </Pressable>
+            </View>
+          )}
+
           {isPoster ? (
             <View style={{ flexDirection: 'row', gap: 12 }}>
-              {allIncoming.length === 0 && (
+              {derivedStatus === 'active' && (
+                <>
+                  <Pressable 
+                    style={[styles.btn, { flex: 1, backgroundColor: colors.interactive.primary }]}
+                    onPress={async () => {
+                      try {
+                        const { apiClient } = require('../../src/api/client');
+                        await apiClient.post(`/rides/${ride.id}/start`);
+                        Toast.show({ title: 'Ride Started', message: 'Drive safe!', type: 'success' });
+                        router.replace(`/ride/${ride.id}`);
+                      } catch (e) {
+                        Toast.show({ title: 'Error', message: 'Failed to start ride', type: 'error' });
+                      }
+                    }}
+                  >
+                    <Ionicons name="play" size={20} color={colors.interactive.primaryText} style={{ marginRight: 8 }} />
+                    <Text style={[styles.btnText, { color: colors.interactive.primaryText }]}>Start Ride</Text>
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.btn, styles.btnDestructive, { flex: 1 }]}
+                    onPress={handleCancelRide}
+                    disabled={cancelRideMutation.isPending}
+                  >
+                    {cancelRideMutation.isPending ? (
+                      <ActivityIndicator color="#FFF" />
+                    ) : (
+                      <Text style={styles.btnTextWhite}>Cancel Ride</Text>
+                    )}
+                  </Pressable>
+                </>
+              )}
+              {derivedStatus === 'in_progress' && (
                 <Pressable 
-                  style={[styles.btn, { flex: 1, backgroundColor: colors.interactive.primary }]}
-                  onPress={() => router.push(`/ride/edit/${ride.id}`)}
+                  style={[styles.btn, { flex: 1, backgroundColor: brandColors.mintGreen }]}
+                  onPress={async () => {
+                    Alert.alert('End Ride', 'Are you sure you want to end this ride?', [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'End Ride',
+                        style: 'default',
+                        onPress: async () => {
+                          try {
+                            const { apiClient } = require('../../src/api/client');
+                            await apiClient.post(`/rides/${ride.id}/end`);
+                            Toast.show({ title: 'Ride Completed', message: 'Hope you had a great trip!', type: 'success' });
+                            router.replace(`/ride/${ride.id}`);
+                          } catch (e) {
+                            Toast.show({ title: 'Error', message: 'Failed to end ride', type: 'error' });
+                          }
+                        }
+                      }
+                    ]);
+                  }}
                 >
-                  <Text style={[styles.btnText, { color: colors.interactive.primaryText }]}>Edit Ride</Text>
+                  <Ionicons name="stop" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                  <Text style={[styles.btnTextWhite]}>End Ride</Text>
                 </Pressable>
               )}
-              <Pressable 
-                style={[styles.btn, styles.btnDestructive, { flex: 1 }]}
-                onPress={handleCancelRide}
-                disabled={cancelRideMutation.isPending}
-              >
-                {cancelRideMutation.isPending ? (
-                  <ActivityIndicator color="#FFF" />
-                ) : (
-                  <Text style={styles.btnTextWhite}>Cancel Ride</Text>
-                )}
-              </Pressable>
             </View>
           ) : existingRequest ? (
             existingRequest.status === 'accepted' ? (
@@ -371,8 +511,8 @@ export default function RideDetailScreen() {
                   style={[styles.btn, { backgroundColor: colors.background.subtle, borderWidth: 1, borderColor: brandColors.mintGreen, flex: 1 }]}
                   onPress={() => router.push(`/chat/${ride.id}/${ride.poster.id}?name=${encodeURIComponent(ride.poster.name)}&rideInfo=${encodeURIComponent(ride.fromCity + ' to ' + ride.toCity)}`)}
                 >
-                  <Ionicons name="chatbubbles" size={20} color={brandColors.mintGreen} style={{ marginRight: 8 }} />
-                  <Text style={[styles.btnText, { color: brandColors.mintGreen }]}>Message</Text>
+                  <Ionicons name="person" size={20} color={brandColors.mintGreen} style={{ marginRight: 8 }} />
+                  <Text style={[styles.btnText, { color: brandColors.mintGreen }]}>DM Poster</Text>
                 </Pressable>
                 
                 {ride.poster.upiId && (

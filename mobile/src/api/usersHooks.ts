@@ -18,6 +18,20 @@ export const useUpdateProfileMutation = () => {
   });
 };
 
+export const useUpdateEmergencyContactsMutation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: { contacts: Array<{ name: string; phone: string }> }) => {
+      const response = await client.put('/users/me/emergency-contacts', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users', 'me'] });
+    },
+  });
+};
+
 export const useUpdateAvatarMutation = () => {
   const queryClient = useQueryClient();
   const updateProfileState = useAuthStore(state => state.updateProfile);

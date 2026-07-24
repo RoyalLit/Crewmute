@@ -37,6 +37,17 @@ export class SafetyController {
     }
   }
 
+  async triggerSos(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const user = req.user as JwtPayload;
+      const { latitude, longitude, rideId } = req.body;
+      await safetyService.triggerSos(user.userId, latitude, longitude, rideId);
+      res.status(200).json({ success: true, message: 'SOS triggered' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async checkBlockStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.user?.userId) {

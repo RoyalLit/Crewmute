@@ -10,6 +10,7 @@ export interface IUser extends Document {
   profilePhotoUrl?: string;
   studentIdPhotoUrl?: string;
   upiId?: string;
+  emergencyContacts?: Array<{ name: string; phone: string }>;
   
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   isCollegeVerified: boolean;
@@ -66,6 +67,12 @@ const UserSchema = new Schema<IUser>(
       type: String,
       trim: true
     },
+    emergencyContacts: [
+      {
+        name: { type: String, required: true, trim: true },
+        phone: { type: String, required: true, trim: true }
+      }
+    ],
     gender: {
       type: String,
       enum: ['MALE', 'FEMALE', 'OTHER']

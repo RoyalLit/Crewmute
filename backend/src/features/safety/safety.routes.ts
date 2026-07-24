@@ -11,6 +11,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.post('/report', asyncHandler(safetyController.reportUser.bind(safetyController)));
+router.post('/sos', asyncHandler(safetyController.triggerSos.bind(safetyController)));
 router.post('/block', asyncHandler(safetyController.blockUser.bind(safetyController)));
 router.get('/block-status/:id', asyncHandler(safetyController.checkBlockStatus.bind(safetyController)));
 
