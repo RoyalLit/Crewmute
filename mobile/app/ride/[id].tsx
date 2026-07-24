@@ -25,6 +25,14 @@ export default function RideDetailScreen() {
   const { colors, isDark } = useTheme();
   const currentUser = useAuthStore((state) => state.user);
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const { data: rideData, isLoading, isError } = useRideDetailsQuery(id as string);
   const { data: myRequestsData } = useMyRequestsQuery();
   const { data: incomingRequestsData } = useIncomingRequestsQuery();
@@ -47,7 +55,7 @@ export default function RideDetailScreen() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background.primary }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </Pressable>
         </View>
@@ -114,7 +122,7 @@ export default function RideDetailScreen() {
           try {
             await cancelRideMutation.mutateAsync(ride.id);
             Toast.show({ title: 'Ride Canceled', message: 'Your ride has been canceled.', type: 'info' });
-            router.back();
+            handleBack();
           } catch (error: any) {
             Toast.show({ title: 'Error', message: error.response?.data?.error?.message || 'Failed to cancel ride', type: 'error' });
           }
@@ -127,7 +135,7 @@ export default function RideDetailScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background.primary }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Ride Details</Text>
@@ -358,13 +366,37 @@ export default function RideDetailScreen() {
             </View>
           ) : existingRequest ? (
             existingRequest.status === 'accepted' ? (
-              <Pressable 
-                style={[styles.btn, { backgroundColor: brandColors.mintGreen }]}
-                onPress={() => router.push(`/chat/${ride.id}/${ride.poster.id}?name=${encodeURIComponent(ride.poster.name)}&rideInfo=${encodeURIComponent(ride.fromCity + ' to ' + ride.toCity)}`)}
-              >
-                <Ionicons name="chatbubbles" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                <Text style={styles.btnTextWhite}>Message Poster</Text>
-              </Pressable>
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <Pressable 
+                  style={[styles.btn, { backgroundColor: colors.background.subtle, borderWidth: 1, borderColor: brandColors.mintGreen, flex: 1 }]}
+                  onPress={() => router.push(`/chat/${ride.id}/${ride.poster.id}?name=${encodeURIComponent(ride.poster.name)}&rideInfo=${encodeURIComponent(ride.fromCity + ' to ' + ride.toCity)}`)}
+                >
+                  <Ionicons name="chatbubbles" size={20} color={brandColors.mintGreen} style={{ marginRight: 8 }} />
+                  <Text style={[styles.btnText, { color: brandColors.mintGreen }]}>Message</Text>
+                </Pressable>
+                
+                {ride.poster.upiId && (
+                  <Pressable 
+                    style={[styles.btn, { backgroundColor: brandColors.mintGreen, flex: 1 }]}
+                    onPress={() => {
+                      const amount = ride.farePerSeat;
+                      const upiUrl = `upi://pay?pa=${ride.poster.upiId}&pn=${encodeURIComponent(ride.poster.name)}&am=${amount}&cu=INR`;
+                      import('react-native').then(({ Linking }) => {
+                        Linking.canOpenURL(upiUrl).then(supported => {
+                          if (supported) {
+                            Linking.openURL(upiUrl);
+                          } else {
+                            Toast.show({ title: 'Error', message: 'No UPI app found on your phone.', type: 'error' });
+                          }
+                        });
+                      });
+                    }}
+                  >
+                    <Ionicons name="card" size={20} color="#FFF" style={{ marginRight: 8 }} />
+                    <Text style={styles.btnTextWhite}>Pay UPI</Text>
+                  </Pressable>
+                )}
+              </View>
             ) : (
               <Pressable 
                 style={[styles.btn, { backgroundColor: colors.background.subtle, borderWidth: 1, borderColor: colors.border.default }]}

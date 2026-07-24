@@ -9,6 +9,7 @@ export interface IUser extends Document {
   homeCity?: string;
   profilePhotoUrl?: string;
   studentIdPhotoUrl?: string;
+  upiId?: string;
   
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   isCollegeVerified: boolean;
@@ -60,6 +61,10 @@ const UserSchema = new Schema<IUser>(
     },
     studentIdPhotoUrl: { 
       type: String 
+    },
+    upiId: {
+      type: String,
+      trim: true
     },
     gender: {
       type: String,

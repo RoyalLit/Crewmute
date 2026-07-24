@@ -7,9 +7,11 @@ const ALLOWED_UPDATE_FIELDS = [
   'homeCity',
   'profilePhotoUrl',
   'gender',
+  'upiId'
 ];
 
 export const validateUpdateProfile = [
+  body('upiId').optional().trim().matches(/^[a-zA-Z0-9.-]+@[a-zA-Z][a-zA-Z]+$/).withMessage('Invalid UPI ID format (e.g. name@bank)'),
   body().custom((_value, { req }) => {
     const keys = Object.keys(req.body);
     const blocked = keys.filter(k => !ALLOWED_UPDATE_FIELDS.includes(k));

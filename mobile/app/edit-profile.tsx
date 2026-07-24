@@ -24,13 +24,28 @@ export default function EditProfileScreen() {
   const [homeCity, setHomeCity] = useState(user?.homeCity || '');
   const [college, setCollege] = useState(user?.college || '');
   const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER' | undefined>(user?.gender);
+  const [upiId, setUpiId] = useState(user?.upiId || '');
   
   const updateProfileMutation = useUpdateProfileMutation();
   const updateAvatarMutation = useUpdateAvatarMutation();
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       Toast.show({ title: 'Error', message: 'Name cannot be empty.', type: 'error' });
+      return;
+    }
+    
+    // Basic UPI ID format validation if provided
+    if (upiId.trim() && !/^[a-zA-Z0-9.-]+@[a-zA-Z][a-zA-Z]+$/.test(upiId.trim())) {
+      Toast.show({ title: 'Error', message: 'Please enter a valid UPI ID (e.g. name@bank)', type: 'error' });
       return;
     }
     
@@ -40,9 +55,10 @@ export default function EditProfileScreen() {
         homeCity: homeCity.trim(),
         college: college.trim(),
         gender,
+        upiId: upiId.trim() || undefined,
       });
       Toast.show({ title: 'Success', message: 'Profile updated successfully!', type: 'success' });
-      router.back();
+      handleBack();
     } catch (err: any) {
       Toast.show({ title: 'Error', message: err.response?.data?.error?.message || 'Failed to update profile.', type: 'error' });
     }
@@ -86,7 +102,7 @@ export default function EditProfileScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Pressable 
-              onPress={() => router.back()} 
+              onPress={handleBack} 
               style={styles.backButton}
               hitSlop={8}
             >
@@ -185,6 +201,27 @@ export default function EditProfileScreen() {
                   </Pressable>
                 ))}
               </View>
+            </View>
+
+            <View style={[styles.inputGroup, { zIndex: 0, marginTop: spacing.md }]}>
+              <Text style={[styles.label, { color: colors.text.secondary }]}>UPI ID (For Receiving Payments)</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { 
+                    backgroundColor: colors.background.card,
+                    color: colors.text.primary,
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    borderWidth: isDark ? 1 : 0,
+                  }
+                ]}
+                placeholderTextColor={colors.text.placeholder}
+                value={upiId}
+                onChangeText={setUpiId}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="e.g. yourname@okhdfcbank"
+              />
             </View>
 
             <Pressable 

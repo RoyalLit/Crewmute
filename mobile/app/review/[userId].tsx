@@ -17,9 +17,17 @@ export default function ReviewScreen() {
   const [comment, setComment] = useState('');
   const createReviewMutation = useCreateReviewMutation();
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleSubmit = async () => {
     if (rating === 0) {
-      Toast.show({ title: 'Rating Required', message: 'Please select a rating from 1 to 5 stars.', type: 'error' });
+      Toast.show({ title: 'Rating Required', message: 'Please select a star rating.', type: 'error' });
       return;
     }
 
@@ -31,7 +39,7 @@ export default function ReviewScreen() {
         comment: comment.trim(),
       });
       Toast.show({ title: 'Review Submitted', message: 'Thank you for your feedback!', type: 'success' });
-      router.back();
+      handleBack();
     } catch (error: any) {
       Toast.show({ title: 'Error', message: error.response?.data?.error?.message || 'Failed to submit review', type: 'error' });
     }
@@ -45,7 +53,7 @@ export default function ReviewScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Leave a Review</Text>

@@ -44,10 +44,18 @@ export default function ReviewsScreen() {
     </View>
   );
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.border.default }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>

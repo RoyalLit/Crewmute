@@ -19,6 +19,14 @@ export default function ReportScreen() {
   
   const reportMutation = useReportUserMutation();
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleReport = () => {
     if (reason.trim().length < 5) {
       Toast.show({ title: 'Error', message: 'Please provide a valid reason (at least 5 characters).', type: 'error' });
@@ -28,7 +36,7 @@ export default function ReportScreen() {
     reportMutation.mutate({ reportedUserId: userId as string, reason: reason.trim() }, {
       onSuccess: () => {
         Alert.alert('Report Submitted', 'Thank you. Our safety team will review this report shortly.', [
-          { text: 'OK', onPress: () => router.back() }
+          { text: 'OK', onPress: handleBack }
         ]);
       },
       onError: (err: any) => {
@@ -40,7 +48,7 @@ export default function ReportScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary, paddingTop: insets.top }]}>
       <View style={[styles.header, { borderBottomColor: colors.border.default }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={handleBack} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Report User</Text>

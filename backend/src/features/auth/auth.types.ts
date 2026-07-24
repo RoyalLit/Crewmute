@@ -43,6 +43,7 @@ export interface UserResponseDTO {
   college?: string;
   homeCity?: string;
   profilePhotoUrl?: string;
+  upiId?: string;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   isCollegeVerified: boolean;
   averageRating: number;

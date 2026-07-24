@@ -64,6 +64,14 @@ export default function ChatScreen(): React.JSX.Element {
   const derivedStatus = getDerivedRideStatus(rideData?.data);
   const isRidePast = derivedStatus !== 'active';
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleAction = (label: string) => {
     if (label === 'Remove Passenger' || label === 'Withdraw Request') {
       if (requestId) {
@@ -72,11 +80,11 @@ export default function ChatScreen(): React.JSX.Element {
         } else {
           withdrawRequestMutation.mutate(requestId);
         }
-        router.back();
+        handleBack();
       }
     } else if (label === 'Block User') {
       blockUserMutation.mutate({ userIdToBlock: otherUserId as string });
-      router.back();
+      handleBack();
     } else if (label === 'Report') {
       router.push(`/report/${otherUserId}`);
     }
@@ -205,7 +213,7 @@ export default function ChatScreen(): React.JSX.Element {
     >
       <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.border.default }]}>
         <View style={styles.headerLeft}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={handleBack} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color={colors.text.primary} />
           </Pressable>
           <Avatar 

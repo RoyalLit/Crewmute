@@ -8,8 +8,6 @@ import { useTheme } from '../../../src/design/theme';
 import { spacing } from '../../../src/design/tokens';
 import { Toast } from '../../../src/components/Toast';
 import { useRideDetailsQuery, useUpdateRideMutation } from '../../../src/api/ridesHooks';
-import { useIncomingRequestsQuery, useMyRequestsQuery } from '../../../src/api/requestsHooks';
-import { formatDate } from '../../../src/utils/rideUtils';
 
 export default function EditRideScreen(): React.JSX.Element {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,6 +16,14 @@ export default function EditRideScreen(): React.JSX.Element {
 
   const { data: rideData, isLoading: rideLoading } = useRideDetailsQuery(id as string);
   const updateRideMutation = useUpdateRideMutation();
+
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -81,7 +87,7 @@ export default function EditRideScreen(): React.JSX.Element {
         }
       });
       Toast.show({ title: 'Success', message: 'Ride updated successfully!', type: 'success' });
-      router.back();
+      handleBack();
     } catch (error: any) {
       const msg = error.response?.data?.error?.message || error.response?.data?.message || 'Failed to update ride';
       Toast.show({ title: 'Error', message: msg, type: 'error' });
@@ -96,7 +102,7 @@ export default function EditRideScreen(): React.JSX.Element {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Pressable onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
           </Pressable>
           <Text style={[styles.headerTitle, { color: colors.text.primary }]}>Edit Ride</Text>
@@ -116,7 +122,7 @@ export default function EditRideScreen(): React.JSX.Element {
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text.primary }]}>Date (YYYY-MM-DD)</Text>
               <TextInput
-                style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.default }]}
+                style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.subtle }]}
                 value={date}
                 onChangeText={setDate}
                 placeholder="2026-10-25"
@@ -128,7 +134,7 @@ export default function EditRideScreen(): React.JSX.Element {
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.text.primary }]}>Time (HH:MM)</Text>
               <TextInput
-                style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.default }]}
+                style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.subtle }]}
                 value={time}
                 onChangeText={setTime}
                 placeholder="14:30"
@@ -149,7 +155,7 @@ export default function EditRideScreen(): React.JSX.Element {
                       style={[
                         styles.chip,
                         { 
-                          backgroundColor: isSelected ? colors.interactive.primary : colors.background.default,
+                          backgroundColor: isSelected ? colors.interactive.primary : colors.background.subtle,
                           borderColor: isSelected ? colors.interactive.primary : colors.border.default
                         }
                       ]}
@@ -169,7 +175,7 @@ export default function EditRideScreen(): React.JSX.Element {
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
                 <Text style={[styles.label, { color: colors.text.primary }]}>Total Seats (inc. you)</Text>
                 <TextInput
-                  style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.default }]}
+                  style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.subtle }]}
                   value={seats}
                   onChangeText={setSeats}
                   placeholder="3"
@@ -182,7 +188,7 @@ export default function EditRideScreen(): React.JSX.Element {
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
                 <Text style={[styles.label, { color: colors.text.primary }]}>Fare per seat (₹)</Text>
                 <TextInput
-                  style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.default }]}
+                  style={[styles.input, { color: colors.text.primary, borderColor: colors.border.default, backgroundColor: colors.background.subtle }]}
                   value={fare}
                   onChangeText={setFare}
                   placeholder="250"

@@ -7,7 +7,7 @@ export const useUpdateProfileMutation = () => {
   const updateProfileState = useAuthStore(state => state.updateProfile);
 
   return useMutation({
-    mutationFn: async (data: { name?: string; college?: string; homeCity?: string; gender?: 'MALE' | 'FEMALE' | 'OTHER' }) => {
+    mutationFn: async (data: { name?: string; college?: string; homeCity?: string; gender?: 'MALE' | 'FEMALE' | 'OTHER'; upiId?: string }) => {
       const response = await client.patch('/users/me', data);
       return response.data;
     },

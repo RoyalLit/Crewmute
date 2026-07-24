@@ -19,7 +19,7 @@ const config: Config = {
     '!src/**/*.types.ts',
     '!src/**/*.d.ts',
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       // Thresholds per AGENT_RULES.md §22.4 — must not be lowered without an ADR
       statements: 80,

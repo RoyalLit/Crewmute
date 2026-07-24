@@ -5,10 +5,11 @@ export interface UpdateProfileRequestDTO {
   college?: string;
   homeCity?: string;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  upiId?: string;
 }
 
 // Reuse UserResponseDTO for sending user profiles out
-export type PublicProfileResponseDTO = Pick<UserResponseDTO, 'id' | 'name' | 'college' | 'homeCity' | 'profilePhotoUrl' | 'gender' | 'isCollegeVerified' | 'averageRating' | 'totalReviews'>;
+export type PublicProfileResponseDTO = Pick<UserResponseDTO, 'id' | 'name' | 'college' | 'homeCity' | 'profilePhotoUrl' | 'gender' | 'isCollegeVerified' | 'averageRating' | 'totalReviews' | 'upiId'>;
 
 export interface CreateReviewRequestDTO {
   rideId: string;
