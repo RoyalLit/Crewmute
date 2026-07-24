@@ -18,5 +18,7 @@ router.post('/:id/accept', asyncHandler(requestsController.acceptRequest.bind(re
 router.post('/:id/reject', asyncHandler(requestsController.rejectRequest.bind(requestsController)));
 router.post('/:id/withdraw', asyncHandler(requestsController.withdrawRequest.bind(requestsController)));
 router.post('/:id/remove-passenger', asyncHandler(requestsController.removePassenger.bind(requestsController)));
+router.post('/:id/mark-paid', asyncHandler(requestsController.markAsPaid.bind(requestsController)));
+router.post('/:id/confirm-payment', asyncHandler(requestsController.confirmPayment.bind(requestsController)));
 
 export { router as requestsRoutes };

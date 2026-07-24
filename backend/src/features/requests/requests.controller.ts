@@ -71,6 +71,24 @@ export class RequestsController {
       next(error);
     }
   }
+
+  async markAsPaid(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const request = await requestsService.markAsPaid(req.params.id, req.user!.userId);
+      res.status(200).json(successResponse(request));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async confirmPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const request = await requestsService.confirmPayment(req.params.id, req.user!.userId);
+      res.status(200).json(successResponse(request));
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const requestsController = new RequestsController();

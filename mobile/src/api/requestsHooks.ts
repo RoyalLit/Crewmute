@@ -109,3 +109,31 @@ export function useRemovePassengerMutation() {
     },
   });
 }
+
+export function useMarkAsPaidMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiClient.post(`/requests/${requestId}/mark-paid`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['ride'] });
+    },
+  });
+}
+
+export function useConfirmPaymentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiClient.post(`/requests/${requestId}/confirm-payment`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomingRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['ride'] });
+    },
+  });
+}

@@ -208,7 +208,7 @@ export class RequestsService {
     if (!request) throw new NotFoundError('RideRequest', id);
     if (request.requesterId.toString() !== userId) throw new ForbiddenError('withdraw this request');
     
-    if (request.status === 'accepted') {
+    if (['accepted', 'payment_submitted', 'confirmed'].includes(request.status)) {
       const ride = await ridesRepository.findById(request.rideId.toString());
       if (ride) {
         const updatedRide = await ridesRepository.updateRide((ride as any)._id.toString(), { availableSeats: ride.availableSeats + 1 });
@@ -230,7 +230,7 @@ export class RequestsService {
     if (!request) throw new NotFoundError('RideRequest', id);
     if (request.posterId.toString() !== userId) throw new ForbiddenError('remove a passenger from this ride');
     
-    if (request.status === 'accepted') {
+    if (['accepted', 'payment_submitted', 'confirmed'].includes(request.status)) {
       const ride = await ridesRepository.findById(request.rideId.toString());
       if (ride) {
         const updatedRide = await ridesRepository.updateRide((ride as any)._id.toString(), { availableSeats: ride.availableSeats + 1 });
@@ -246,6 +246,30 @@ export class RequestsService {
     }
 
     const updatedRequest = await requestsRepository.updateStatus(id, 'rejected');
+    return this.formatRequest(updatedRequest);
+  }
+
+  async markAsPaid(id: string, userId: string): Promise<RideRequestResponseDTO> {
+    const request = await requestsRepository.findById(id);
+    if (!request) throw new NotFoundError('RideRequest', id);
+    if (request.requesterId.toString() !== userId) throw new ForbiddenError('mark this request as paid');
+    if (request.status !== 'accepted') throw new ConflictError(`Cannot mark as paid from status ${request.status}.`);
+
+    const updatedRequest = await requestsRepository.updateStatus(id, 'payment_submitted');
+    return this.formatRequest(updatedRequest);
+  }
+
+  async confirmPayment(id: string, userId: string): Promise<RideRequestResponseDTO> {
+    const request = await requestsRepository.findById(id);
+    if (!request) throw new NotFoundError('RideRequest', id);
+    if (request.posterId.toString() !== userId) throw new ForbiddenError('confirm payment for this request');
+    
+    // Poster can confirm payment directly from 'accepted' (if fare is 0 or waived) or from 'payment_submitted'
+    if (request.status !== 'payment_submitted' && request.status !== 'accepted') {
+      throw new ConflictError(`Cannot confirm payment from status ${request.status}.`);
+    }
+
+    const updatedRequest = await requestsRepository.updateStatus(id, 'confirmed');
     return this.formatRequest(updatedRequest);
   }
 }

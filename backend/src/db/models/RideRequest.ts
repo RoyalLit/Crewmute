@@ -5,7 +5,7 @@ export interface IRideRequest extends Document {
   rideId: Types.ObjectId;
   requesterId: Types.ObjectId;
   posterId: Types.ObjectId;
-  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  status: 'pending' | 'accepted' | 'payment_submitted' | 'confirmed' | 'rejected' | 'withdrawn';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,7 +18,7 @@ const rideRequestSchema = new Schema<IRideRequest>(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'accepted', 'rejected', 'withdrawn'],
+      enum: ['pending', 'accepted', 'payment_submitted', 'confirmed', 'rejected', 'withdrawn'],
       default: 'pending',
       index: true,
     },

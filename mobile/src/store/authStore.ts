@@ -17,6 +17,7 @@ interface User {
   isEmailVerified: boolean;
   status: string;
   createdAt: Date;
+  emergencyContacts?: { name: string; phone: string; relation?: string }[];
 }
 
 interface AuthState {

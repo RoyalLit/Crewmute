@@ -8,7 +8,7 @@ import { brandColors, spacing } from '../design/tokens';
 import { Avatar } from './Avatar';
 
 
-import { useAcceptRequestMutation, useRejectRequestMutation } from '../api/requestsHooks';
+import { useAcceptRequestMutation, useRejectRequestMutation, useConfirmPaymentMutation } from '../api/requestsHooks';
 
 interface IncomingRequestItemProps {
   request: any;
@@ -34,6 +34,19 @@ export const IncomingRequestItem = React.memo(function IncomingRequestItem({ req
     rejectMutation.mutate(request.id, {
       onError: (error: any) => {
         Toast.show({ title: 'Error', message: error.response?.data?.error?.message || 'Failed to reject request', type: 'error' });
+      }
+    });
+  };
+
+  const confirmPaymentMutation = useConfirmPaymentMutation();
+
+  const handleConfirmPayment = () => {
+    confirmPaymentMutation.mutate(request.id, {
+      onSuccess: () => {
+        Toast.show({ title: 'Confirmed', message: 'Seat has been confirmed.', type: 'success' });
+      },
+      onError: (error: any) => {
+        Toast.show({ title: 'Error', message: error.response?.data?.error?.message || 'Failed to confirm', type: 'error' });
       }
     });
   };
@@ -91,11 +104,30 @@ export const IncomingRequestItem = React.memo(function IncomingRequestItem({ req
         </View>
       )}
 
-      {request.status === 'accepted' && (
+      {(request.status === 'accepted' || request.status === 'payment_submitted' || request.status === 'confirmed') && (
         <View style={styles.actions}>
+          {!isRidePast && request.status !== 'confirmed' && (
+            <Pressable 
+              style={[styles.btn, { backgroundColor: brandColors.mintGreen, flexDirection: 'row', flex: 1.5 }]}
+              onPress={handleConfirmPayment}
+              disabled={confirmPaymentMutation.isPending}
+            >
+              {confirmPaymentMutation.isPending ? (
+                <ActivityIndicator size="small" color="#FFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={16} color="#FFF" style={{ marginRight: 6 }} />
+                  <Text style={[styles.btnText, { color: '#FFF' }]}>
+                    {request.status === 'payment_submitted' ? 'Confirm Payment' : 'Confirm Seat'}
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          )}
+
           {!isRidePast && (
             <Pressable 
-              style={[styles.btn, { backgroundColor: brandColors.mintGreen, flexDirection: 'row' }]}
+              style={[styles.btn, { backgroundColor: colors.background.subtle, borderWidth: 1, borderColor: colors.border.default, flexDirection: 'row', flex: 1 }]}
               onPress={() => {
                 const rId = request.rideId?._id || request.rideId?.id || request.rideId || request.ride?._id || request.ride?.id;
                 const rInfo = request.rideId?.fromCity ? `${request.rideId.fromCity} to ${request.rideId.toCity}` : '';
@@ -105,8 +137,8 @@ export const IncomingRequestItem = React.memo(function IncomingRequestItem({ req
               accessibilityRole="button"
               accessibilityLabel={`Send message to ${request.requester.name}`}
             >
-              <Ionicons name="chatbubbles" size={16} color={colors.background.card} style={{ marginRight: 6 }} />
-              <Text style={[styles.btnText, { color: colors.background.card }]}>Message</Text>
+              <Ionicons name="chatbubbles" size={16} color={colors.text.primary} style={{ marginRight: 6 }} />
+              <Text style={[styles.btnText, { color: colors.text.primary }]}>Message</Text>
             </Pressable>
           )}
 
