@@ -70,7 +70,14 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Crewmute to use your location so we can share it with your emergency contacts during an SOS.",
+          "locationWhenInUsePermission": "Allow Crewmute to use your location so we can share it with your emergency contacts during an SOS."
+        }
+      ]
     ],
     "scheme": "crewmute",
     "extra": {

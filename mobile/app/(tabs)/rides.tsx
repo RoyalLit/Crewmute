@@ -144,7 +144,7 @@ export default function RidesScreen(): React.JSX.Element {
               Long press to cancel
             </Text>
           )}
-          {activeTab === 'history' && (getDerivedRideStatus(ride) === 'expired' || getDerivedRideStatus(ride) === 'completed') && (
+          {activeTab === 'history' && (getDerivedRideStatus(ride) === 'expired' || getDerivedRideStatus(ride) === 'completed') && ride._requestStatus && ['accepted', 'confirmed', 'payment_submitted'].includes(ride._requestStatus) && (
             <Pressable 
               style={[styles.leaveReviewBtn, { borderColor: brandColors.electricViolet }]}
               onPress={() => reviewSheetRef.current?.present(rideId)}

@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { useTheme } from '../src/design/theme';
-import { spacing, fonts } from '../src/design/tokens';
+import { spacing } from '../src/design/tokens';
+import { fontFamilies } from '../src/design/typography';
 import { useAuthStore } from '../src/store/authStore';
 import { useUpdateEmergencyContactsMutation } from '../src/api/usersHooks';
 import { Toast } from '../src/components/Toast';
@@ -112,10 +113,10 @@ export default function EmergencyContactsScreen() {
       >
         <View style={[bentoBox, { gap: spacing.md }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Ionicons name="shield-checkmark" size={24} color={colors.semantic.success} />
+            <Ionicons name="shield-checkmark" size={24} color={colors.status.acceptedText} />
             <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>Your Safety Circle</Text>
           </View>
-          <Text style={{ color: colors.text.secondary, fontFamily: fonts.medium, fontSize: 15, lineHeight: 22 }}>
+          <Text style={{ color: colors.text.secondary, fontFamily: fontFamilies.medium, fontSize: 15, lineHeight: 22 }}>
             Add up to 3 emergency contacts. When you trigger an SOS during a ride, we'll immediately send them your live location and ride details.
           </Text>
         </View>
@@ -136,7 +137,7 @@ export default function EmergencyContactsScreen() {
                   }
                 ]}
                 placeholder="E.g. Mom"
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={colors.text.placeholder}
                 value={contacts[index].name}
                 onChangeText={(text) => updateContact(index, 'name', text)}
               />
@@ -154,7 +155,7 @@ export default function EmergencyContactsScreen() {
                   }
                 ]}
                 placeholder="+91 9876543210 or email@domain.com"
-                placeholderTextColor={colors.text.tertiary}
+                placeholderTextColor={colors.text.placeholder}
                 value={contacts[index].phone}
                 onChangeText={(text) => updateContact(index, 'phone', text)}
                 autoCapitalize="none"
@@ -213,19 +214,19 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: fonts.bold,
+    fontFamily: fontFamilies.bold,
   },
   sectionTitle: {
     fontSize: 20,
-    fontFamily: fonts.bold,
+    fontFamily: fontFamilies.bold,
   },
   contactLabel: {
     fontSize: 18,
-    fontFamily: fonts.semiBold,
+    fontFamily: fontFamilies.semiBold,
   },
   inputLabel: {
     fontSize: 14,
-    fontFamily: fonts.medium,
+    fontFamily: fontFamilies.medium,
     marginBottom: spacing.xs,
   },
   input: {
@@ -234,7 +235,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: spacing.md,
     fontSize: 16,
-    fontFamily: fonts.medium,
+    fontFamily: fontFamilies.medium,
   },
   footer: {
     paddingHorizontal: spacing.lg,
@@ -256,6 +257,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
-    fontFamily: fonts.bold,
+    fontFamily: fontFamilies.bold,
   },
 });

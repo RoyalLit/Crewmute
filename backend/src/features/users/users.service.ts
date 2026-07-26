@@ -201,13 +201,17 @@ export class UsersService {
   }
 
   async getStats(userId: string): Promise<{ ridesGiven: number; ridesTaken: number }> {
-    const objectId = new Types.ObjectId(userId);
+    const objectId = Types.ObjectId.isValid(userId) ? new Types.ObjectId(userId) : userId;
     const [ridesGiven, ridesTaken] = await Promise.all([
-      RideModel.countDocuments({ posterId: objectId, status: 'expired' }),
-      RideRequestModel.countDocuments({ requesterId: objectId, status: 'accepted' }),
+      RideModel.countDocuments({
+        $or: [{ posterId: objectId }, { posterId: userId }],
+        status: { $ne: 'cancelled' },
+      }),
+      RideRequestModel.countDocuments({
+        $or: [{ requesterId: objectId }, { requesterId: userId }],
+        status: { $in: ['accepted', 'confirmed', 'payment_submitted', 'completed'] },
+      }),
     ]);
-    
-    console.log(`[getStats] User ${userId} -> Given: ${ridesGiven}, Taken: ${ridesTaken}`);
 
     return { ridesGiven, ridesTaken };
   }

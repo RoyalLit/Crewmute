@@ -2,35 +2,26 @@
  * Typed mobile environment variables.
  *
  * All EXPO_PUBLIC_* variables are read here and exported as a typed object.
- * App code imports from this module — never accesses process.env directly.
- *
- * Per ARCHITECTURE.md §8.2 — all mobile env vars are EXPO_PUBLIC_* prefixed.
- * Non-EXPO_PUBLIC_ vars are not accessible in the React Native bundle.
+ * Dynamically resolves Metro host IP for physical Android devices in development.
  */
 
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-function requirePublicEnv(value: string | undefined, name: string): string {
-  if (!value) {
-    if (__DEV__) {
-      console.warn(`[config] Missing public environment variable: ${name}`);
-      return '';
-    }
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
+const hostUri = Constants.expoConfig?.hostUri;
+const devHost = hostUri 
+  ? hostUri.split(':')[0] 
+  : (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
 
-let apiUrl = requirePublicEnv(process.env.EXPO_PUBLIC_API_URL, 'EXPO_PUBLIC_API_URL');
+const defaultApiUrl = `http://${devHost}:5001/api/v1`;
 
-// Dynamically override localhost/LAN IPs during development to match the Expo Go host
-if (__DEV__ && Constants.expoConfig?.hostUri) {
-  const debuggerHost = Constants.expoConfig.hostUri.split(':')[0];
-  if (debuggerHost) {
-    // We assume the backend runs on port 5001. If the .env URL has a different port or path,
-    // we just replace the host part. A simple regex replacement works well.
-    apiUrl = apiUrl.replace(/^(https?:\/\/)([^:/]+)/, `$1${debuggerHost}`);
-  }
+let apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
+if (!apiUrl || apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+  apiUrl = defaultApiUrl;
+} else if (__DEV__ && devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
+  // If running on a physical device, replace localhost/127.0.0.1 with the actual Metro host IP
+  apiUrl = apiUrl.replace(/localhost|127\.0\.0\.1/, devHost);
 }
 
 const mobileEnv = {

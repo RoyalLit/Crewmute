@@ -50,7 +50,7 @@ export class RequestsRepository {
     return requests as unknown as IRideRequest[];
   }
 
-  async updateStatus(id: string, status: 'accepted' | 'rejected' | 'withdrawn', options?: { session?: ClientSession }): Promise<IRideRequest | null> {
+  async updateStatus(id: string, status: 'accepted' | 'rejected' | 'withdrawn' | 'payment_submitted' | 'confirmed', options?: { session?: ClientSession }): Promise<IRideRequest | null> {
     const request = await RideRequestModel.findByIdAndUpdate(id, { status }, { new: true, session: options?.session }).lean();
     return request ? (request as unknown as IRideRequest) : null;
   }

@@ -164,6 +164,15 @@ export default function RootLayout(): React.JSX.Element | null {
                   <Stack.Screen name="(auth)" />
                   <Stack.Screen name="(tabs)" />
                   <Stack.Screen name="ride/[id]" />
+                  <Stack.Screen name="ride/edit/[id]" />
+                  <Stack.Screen name="chat/[rideId]/[otherUserId]" />
+                  <Stack.Screen name="chat/group/[rideId]" />
+                  <Stack.Screen name="edit-profile" />
+                  <Stack.Screen name="emergency-contacts" />
+                  <Stack.Screen name="report/[userId]" />
+                  <Stack.Screen name="review/[userId]" />
+                  <Stack.Screen name="user/[userId]/reviews" />
+                  <Stack.Screen name="+not-found" />
                 </Stack>
                 <GlobalAlert />
                 {(!animationDone || !isAuthChecked) && <BootScreen onAnimationDone={() => setAnimationDone(true)} isReady={isAuthChecked} />}
