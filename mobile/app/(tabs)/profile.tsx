@@ -229,7 +229,7 @@ export default function ProfileScreen(): React.JSX.Element {
           </Pressable>
           <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
 
-          <Pressable style={styles.settingRow} onPress={() => Toast.show({ title: 'Privacy Policy', message: 'This is a mock Privacy Policy for Crewmute MVP.', type: 'info' })}>
+          <Pressable style={styles.settingRow} onPress={() => router.push('/privacy-policy')}>
             <View style={styles.settingIcon}>
               <Ionicons name="document-text-outline" size={20} color={colors.text.primary} />
             </View>
@@ -238,7 +238,7 @@ export default function ProfileScreen(): React.JSX.Element {
           </Pressable>
           <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
 
-          <Pressable style={styles.settingRow} onPress={() => Toast.show({ title: 'Terms of Service', message: 'This is a mock Terms of Service for Crewmute MVP.', type: 'info' })}>
+          <Pressable style={styles.settingRow} onPress={() => router.push('/terms-of-service')}>
             <View style={styles.settingIcon}>
               <Ionicons name="information-circle-outline" size={20} color={colors.text.primary} />
             </View>

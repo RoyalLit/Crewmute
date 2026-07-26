@@ -169,6 +169,8 @@ export default function RootLayout(): React.JSX.Element | null {
                   <Stack.Screen name="chat/group/[rideId]" />
                   <Stack.Screen name="edit-profile" />
                   <Stack.Screen name="emergency-contacts" />
+                  <Stack.Screen name="privacy-policy" />
+                  <Stack.Screen name="terms-of-service" />
                   <Stack.Screen name="report/[userId]" />
                   <Stack.Screen name="review/[userId]" />
                   <Stack.Screen name="user/[userId]/reviews" />
