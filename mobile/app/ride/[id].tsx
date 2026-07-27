@@ -1,6 +1,6 @@
 import { Toast } from '../../src/components/Toast';
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,7 +49,7 @@ export default function RideDetailScreen() {
 
   const ride = rideData?.data;
   const isPoster = ride ? (ride.posterId === currentUser?.id || ride.poster?.id === currentUser?.id) : false;
-  const derivedStatus = ride ? getDerivedRideStatus(ride) : null;
+  const derivedStatus = getDerivedRideStatus(ride);
 
   const myRequests = Array.isArray(myRequestsData?.data) ? myRequestsData.data : [];
   const existingRequest = ride ? myRequests.find((req: any) => 
@@ -262,7 +262,7 @@ export default function RideDetailScreen() {
                   <Text style={{ fontSize: 10, fontFamily: 'PlusJakartaSans-700Bold', color: isDark ? WOMEN_ONLY_COLORS.bg : WOMEN_ONLY_COLORS.text }}>WOMEN ONLY</Text>
                 </View>
               )}
-              <StatusChip status={derivedStatus} />
+              {derivedStatus && <StatusChip status={derivedStatus} />}
             </View>
           </View>
 
@@ -445,7 +445,7 @@ export default function RideDetailScreen() {
       </ScrollView>
 
       {/* Sticky Bottom CTA */}
-      {(derivedStatus === 'active' || derivedStatus === 'in_progress') && (
+      {(derivedStatus === 'active' || derivedStatus === 'in_progress' || derivedStatus === 'expired') && (
         <View style={[styles.bottomCta, { backgroundColor: colors.background.primary, borderTopColor: colors.border.default, paddingBottom: 28 }]}>
           {isPoster ? (
             <View style={{ flexDirection: 'column', gap: 10 }}>

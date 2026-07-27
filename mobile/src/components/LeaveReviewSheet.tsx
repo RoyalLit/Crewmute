@@ -1,6 +1,6 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, Keyboard, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
-import { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { BottomSheetModal, BottomSheetBackdrop, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../design/theme';
 import { spacing, brandColors } from '../design/tokens';

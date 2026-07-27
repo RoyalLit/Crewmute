@@ -4,7 +4,25 @@ import { useTheme } from '../design/theme';
 import { brandColors } from '../design/tokens';
 import { typography } from '../design/typography';
 
-export type RideStatus = 'Active' | 'Pending' | 'Accepted' | 'Rejected' | 'Full' | 'Expired' | 'Cancelled' | 'active' | 'in_progress' | 'completed' | 'cancelled' | 'expired';
+export type RideStatus =
+  | 'Active'
+  | 'Pending'
+  | 'Accepted'
+  | 'Rejected'
+  | 'Full'
+  | 'Expired'
+  | 'Cancelled'
+  | 'Completed'
+  | 'In Progress'
+  | 'active'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+  | 'expired'
+  | 'pending'
+  | 'accepted'
+  | 'rejected'
+  | 'full';
 
 function hexToRGBA(hex: string, alpha: number) {
   if (!hex || hex.length < 7) return 'rgba(0,0,0,0.1)';
@@ -15,50 +33,49 @@ function hexToRGBA(hex: string, alpha: number) {
 }
 
 interface StatusChipProps {
-  status: RideStatus;
+  status?: RideStatus | null;
 }
 
 export function StatusChip({ status }: StatusChipProps) {
   const { colors } = useTheme();
-  let displayStatus = status.charAt(0).toUpperCase() + status.slice(1) as RideStatus | 'Completed';
-  let textColor = '';
 
-  if (displayStatus === 'Expired') {
-    displayStatus = 'Completed';
-  }
+  if (!status) return null;
 
-  switch (displayStatus) {
-    case 'Active':
-    case 'Accepted':
-      textColor = brandColors.mintGreen;
-      break;
-    case 'In_progress':
-      displayStatus = 'In Progress' as any;
-      textColor = brandColors.amber;
-      break;
-    case 'Pending':
-      textColor = brandColors.amber;
-      break;
-    case 'Rejected':
-      textColor = brandColors.coralPink;
-      break;
-    case 'Full':
-      textColor = brandColors.electricViolet;
-      break;
-    case 'Completed':
-      textColor = brandColors.electricViolet;
-      break;
-    case 'Cancelled':
-    default:
-      textColor = colors.text.placeholder;
-      break;
+  const normalizedStatus = status.toLowerCase();
+  let label = status as string;
+  let textColor = colors.text.placeholder;
+
+  if (normalizedStatus === 'active' || normalizedStatus === 'accepted') {
+    label = 'Active';
+    textColor = brandColors.mintGreen;
+  } else if (normalizedStatus === 'in_progress' || normalizedStatus === 'in progress') {
+    label = 'In Progress';
+    textColor = brandColors.amber;
+  } else if (normalizedStatus === 'pending') {
+    label = 'Pending';
+    textColor = brandColors.amber;
+  } else if (normalizedStatus === 'rejected') {
+    label = 'Rejected';
+    textColor = brandColors.coralPink;
+  } else if (normalizedStatus === 'full') {
+    label = 'Full';
+    textColor = brandColors.electricViolet;
+  } else if (normalizedStatus === 'completed' || normalizedStatus === 'expired') {
+    label = 'Completed';
+    textColor = brandColors.electricViolet;
+  } else if (normalizedStatus === 'cancelled') {
+    label = 'Cancelled';
+    textColor = colors.text.placeholder;
+  } else {
+    label = status.charAt(0).toUpperCase() + status.slice(1);
+    textColor = colors.text.placeholder;
   }
 
   const backgroundColor = hexToRGBA(textColor, 0.15);
 
   return (
-    <View style={[styles.container, { backgroundColor }]} accessible accessibilityRole="text" accessibilityLabel={displayStatus}>
-      <Text style={[styles.text, { color: textColor }]}>{displayStatus}</Text>
+    <View style={[styles.container, { backgroundColor }]} accessible accessibilityRole="text" accessibilityLabel={label}>
+      <Text style={[styles.text, { color: textColor }]}>{label}</Text>
     </View>
   );
 }

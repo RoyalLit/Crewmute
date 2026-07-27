@@ -6,7 +6,7 @@ interface Ride {
   status?: string;
 }
 
-export const getDerivedRideStatus = (ride: Ride): 'active' | 'in_progress' | 'completed' | 'cancelled' | 'expired' => {
+export const getDerivedRideStatus = (ride?: Ride | null): 'active' | 'in_progress' | 'completed' | 'cancelled' | 'expired' => {
   if (!ride) return 'active';
   
   if (ride.status === 'cancelled') return 'cancelled';

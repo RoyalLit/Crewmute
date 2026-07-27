@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
 import mobileEnv from '../config/env';
 import { storage } from '../lib/storage';
 import logger from '../utils/logger';

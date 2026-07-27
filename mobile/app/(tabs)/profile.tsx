@@ -1,4 +1,3 @@
-import { Toast } from '../../src/components/Toast';
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
