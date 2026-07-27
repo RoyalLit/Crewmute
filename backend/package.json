@@ -22,7 +22,7 @@
   "dependencies": {
     "@sentry/node": "^10.68.0",
     "bcrypt": "^6.0.0",
-    "cloudinary": "^2.10.0",
+    "cloudinary": "^1.41.3",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
