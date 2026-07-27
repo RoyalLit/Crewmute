@@ -27,6 +27,9 @@ interface Config {
     readonly apiSecret: string;
   };
   readonly clientUrl: string;
+  readonly sentryDsn?: string;
+  readonly cronEnabled: boolean;
+  readonly magicOtpEnabled: boolean;
 }
 
 function requireEnv(key: string): string {
@@ -68,6 +71,9 @@ const env: Config = Object.freeze({
     apiSecret: optionalEnv('CLOUDINARY_API_SECRET', ''),
   },
   clientUrl: optionalEnv('CLIENT_URL', '*'),
+  sentryDsn: optionalEnv('SENTRY_DSN', ''),
+  cronEnabled: optionalEnv('CRON_ENABLED', 'true') === 'true',
+  magicOtpEnabled: optionalEnv('MAGIC_OTP_ENABLED', 'true') === 'true',
 });
 
 export default env;

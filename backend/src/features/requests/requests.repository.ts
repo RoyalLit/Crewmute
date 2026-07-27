@@ -63,6 +63,14 @@ export class RequestsRepository {
     const count = await RideRequestModel.countDocuments({ rideId, requesterId: userId, status: 'accepted' });
     return count > 0;
   }
+
+  async getAcceptedPassengers(rideId: string): Promise<IRideRequest[]> {
+    const requests = await RideRequestModel.find({
+      rideId,
+      status: { $in: ['accepted', 'payment_submitted', 'confirmed'] },
+    }).lean();
+    return requests as unknown as IRideRequest[];
+  }
 }
 
 export const requestsRepository = new RequestsRepository();

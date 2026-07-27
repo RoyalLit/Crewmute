@@ -54,7 +54,7 @@ export function initializeSockets(server: HttpServer): void {
   });
 
   // Authentication Middleware
-  io.use((socket: Socket, next) => {
+  io.use((socket: Socket, next: any) => {
     const token = socket.handshake.auth.token;
     if (!token) {
       return next(new Error('Authentication token missing'));
@@ -202,9 +202,10 @@ export function initializeSockets(server: HttpServer): void {
               if (rideDoc && rideDoc.posterId.toString() !== user.userId) {
                 usersToNotify.add(rideDoc.posterId.toString());
               }
-              passengers.forEach(p => {
-                if (p.userId.toString() !== user.userId) {
-                  usersToNotify.add(p.userId.toString());
+              passengers.forEach((p: any) => {
+                const pUserId = (p.requesterId || p.userId)?.toString();
+                if (pUserId && pUserId !== user.userId) {
+                  usersToNotify.add(pUserId);
                 }
               });
 
@@ -278,7 +279,7 @@ export function initializeSockets(server: HttpServer): void {
         }
 
         // Only the intended receiver can mark a message as read
-        if (msg.receiverId.toString() !== user.userId) {
+        if (msg.receiverId && msg.receiverId.toString() !== user.userId) {
           logger.warn(`Unauthorized mark_read attempt by ${user.userId} for message ${messageId}`);
           return;
         }

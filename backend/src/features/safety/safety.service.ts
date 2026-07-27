@@ -35,8 +35,7 @@ export class SafetyService {
 
   async triggerSos(userId: string, latitude?: number, longitude?: number, rideId?: string): Promise<void> {
     const { usersRepository } = await import('../users/users.repository');
-    const { emailService } = await import('../auth/email.service');
-    const { notificationsService } = await import('../notifications/notifications.service');
+    const { emailService } = await import('../../shared/mailer');
     const logger = (await import('../../shared/logger')).default;
 
     const user = await usersRepository.findById(userId);
@@ -56,7 +55,7 @@ export class SafetyService {
             target,
             `SOS Alert from ${user.name}`,
             messageBody
-          ).catch(e => logger.error(`Failed to send SOS email to ${target}`, e));
+          ).catch((e: any) => logger.error(`Failed to send SOS email to ${target}`, e));
         }
       }
     }

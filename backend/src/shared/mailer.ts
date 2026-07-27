@@ -56,6 +56,28 @@ class MailerService {
       throw new Error('Failed to send verification email. Please try again later.');
     }
   }
+
+  async sendEmail(to: string, subject: string, body: string): Promise<void> {
+    if (!env.email.user || !env.email.pass) {
+      logger.warn(`SMTP credentials not configured. Skipping email to ${to}. Subject: ${subject}`);
+      return;
+    }
+
+    try {
+      const senderEmail = env.email.user === 'resend' ? 'onboarding@resend.dev' : env.email.user;
+      await this.transporter.sendMail({
+        from: `"Crewmute" <${senderEmail}>`,
+        to,
+        subject,
+        text: body,
+      });
+      logger.info(`Email successfully sent to ${to}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to send email to ${to}: ${errorMessage}`);
+    }
+  }
 }
 
 export const mailerService = new MailerService();
+export const emailService = mailerService;

@@ -14,7 +14,7 @@ cloudinary.config({
 // Configure Multer Storage for Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: (_req, file) => {
+  params: async (_req: any, file: any) => {
     return {
       folder: 'crewmute_profiles',
       allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
@@ -27,7 +27,7 @@ const storage = new CloudinaryStorage({
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
+const fileFilter: multer.Options['fileFilter'] = (_req: any, file: any, cb: any) => {
   if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
   }

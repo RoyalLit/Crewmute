@@ -6,14 +6,15 @@
  */
 
 import type { Request } from 'express';
+import type { JwtPayload } from '../features/auth/auth.types';
 
 /**
  * Authenticated user payload attached to the request by auth middleware.
  * Services and controllers reference req.user as this type.
  */
-export interface RequestUser {
-  id: string;
-  email: string;
+export interface RequestUser extends JwtPayload {
+  id?: string;
+  email?: string;
 }
 
 /**
@@ -21,7 +22,7 @@ export interface RequestUser {
  * Use AuthenticatedRequest in protected route handlers.
  */
 export interface AuthenticatedRequest extends Request {
-  user: RequestUser;
+  user: JwtPayload;
 }
 
 /**

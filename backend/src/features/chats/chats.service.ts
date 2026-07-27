@@ -108,7 +108,7 @@ export class ChatsService {
       id: m._id.toString(),
       rideId: m.rideId.toString(),
       senderId: m.senderId.toString(),
-      receiverId: m.receiverId.toString(),
+      receiverId: m.receiverId ? m.receiverId.toString() : '',
       content: m.content,
       readStatus: m.readStatus,
       createdAt: m.createdAt.toISOString(),
@@ -117,9 +117,8 @@ export class ChatsService {
     return dtos.reverse(); // Return oldest first for UI
   }
 
-  async getGroupChatHistory(userId: string, rideId: string, limit = 50, skip = 0): Promise<MessageResponseDTO[]> {
+  async getGroupChatHistory(_userId: string, rideId: string, limit = 50, skip = 0): Promise<MessageResponseDTO[]> {
     const rideObjId = new mongoose.Types.ObjectId(rideId);
-    const userObjId = new mongoose.Types.ObjectId(userId);
 
     // Note: For group chats, 'readStatus' logic is more complex. We skip it for MVP.
     const messages = await MessageModel.find({

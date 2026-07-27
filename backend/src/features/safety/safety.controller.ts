@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import type { JwtPayload } from '../auth/auth.types';
 
 import { UnauthorizedError } from '../../shared/errors';
 import { successResponse } from '../../shared/response';
