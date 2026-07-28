@@ -9,10 +9,18 @@ import { CityAutocomplete } from '../../src/components/CityAutocomplete';
 
 import { useRegisterMutation } from '../../src/api/authHooks';
 
+import * as ImagePicker from 'expo-image-picker';
+import { useAuthStore } from '../../src/store/authStore';
+import { storage } from '../../src/lib/storage';
+
 export default function RegisterScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+  const loginAction = useAuthStore((state) => state.login);
   
+  const [verificationMethod, setVerificationMethod] = useState<'email' | 'studentId'>('email');
+  const [studentIdPhoto, setStudentIdPhoto] = useState<string | null>(null);
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -29,7 +37,42 @@ export default function RegisterScreen() {
   const registerMutation = useRegisterMutation();
   const loading = registerMutation.isPending;
 
-  const isFormValid = !!(form.name && form.email && form.college && form.homeCity && form.password.length >= 8 && /[A-Z]/.test(form.password) && /[a-z]/.test(form.password) && /[0-9]/.test(form.password));
+  const isFormValid = !!(
+    form.name && 
+    form.email && 
+    form.college && 
+    form.homeCity && 
+    (verificationMethod === 'email' || studentIdPhoto) &&
+    form.password.length >= 8 && 
+    /[A-Z]/.test(form.password) && 
+    /[a-z]/.test(form.password) && 
+    /[0-9]/.test(form.password)
+  );
+
+  const handlePickIdPhoto = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        setError('Permission to access camera roll is required!');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.7,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const photoData = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+        setStudentIdPhoto(photoData);
+      }
+    } catch (e: any) {
+      setError('Failed to pick image');
+    }
+  };
 
   const handleRegister = async () => {
     setError('');
@@ -39,15 +82,36 @@ export default function RegisterScreen() {
       return;
     }
     
+    if (verificationMethod === 'studentId' && !studentIdPhoto) {
+      setError('Please upload a photo of your Student ID Card');
+      return;
+    }
+
     if (!isFormValid) {
       setError('Please ensure your password meets all constraints');
       return;
     }
 
     try {
-      await registerMutation.mutateAsync(form);
-      // Pass email to the verify screen so it knows who to verify
-      router.push({ pathname: '/(auth)/verify', params: { email: form.email, name: form.name, college: form.college } });
+      const payload = {
+        ...form,
+        verificationMethod,
+        studentIdPhotoUrl: studentIdPhoto || undefined,
+      };
+
+      const res = await registerMutation.mutateAsync(payload);
+
+      if (verificationMethod === 'studentId' && res.data?.tokens && res.data?.user) {
+        await storage.setAccessToken(res.data.tokens.accessToken);
+        await storage.setRefreshToken(res.data.tokens.refreshToken);
+        if (res.data.user.id) {
+          await storage.setUserId(res.data.user.id);
+        }
+        loginAction(res.data.user);
+        router.replace('/(tabs)');
+      } else {
+        router.push({ pathname: '/(auth)/verify', params: { email: form.email, name: form.name, college: form.college } });
+      }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Registration failed');
     }
@@ -76,6 +140,26 @@ export default function RegisterScreen() {
           <Text style={[styles.title, { color: colors.text.primary }]}>Join Crewmute</Text>
         </View>
 
+        {/* Verification Method Segment Selector */}
+        <View style={{ flexDirection: 'row', backgroundColor: colors.background.subtle, padding: 4, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: colors.border.default }}>
+          <Pressable 
+            onPress={() => setVerificationMethod('email')}
+            style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: verificationMethod === 'email' ? brandColors.electricViolet : 'transparent' }}
+          >
+            <Text style={{ fontFamily: 'PlusJakartaSans-600SemiBold', fontSize: 13, color: verificationMethod === 'email' ? '#FFFFFF' : colors.text.secondary }}>
+              🎓 College Email
+            </Text>
+          </Pressable>
+          <Pressable 
+            onPress={() => setVerificationMethod('studentId')}
+            style={{ flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: verificationMethod === 'studentId' ? brandColors.electricViolet : 'transparent' }}
+          >
+            <Text style={{ fontFamily: 'PlusJakartaSans-600SemiBold', fontSize: 13, color: verificationMethod === 'studentId' ? '#FFFFFF' : colors.text.secondary }}>
+              🪪 Student ID Card
+            </Text>
+          </Pressable>
+        </View>
+
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text.secondary }]}>Full Name</Text>
@@ -91,10 +175,12 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.text.secondary }]}>College Email</Text>
+            <Text style={[styles.label, { color: colors.text.secondary }]}>
+              {verificationMethod === 'email' ? 'College Email' : 'Email Address'}
+            </Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.background.subtle, color: colors.text.primary, borderColor: colors.border.default }]}
-              placeholder="aditi@stu.amity.edu"
+              placeholder={verificationMethod === 'email' ? 'aditi@stu.amity.edu' : 'aditi@gmail.com'}
               placeholderTextColor={colors.text.placeholder}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -104,6 +190,36 @@ export default function RegisterScreen() {
               autoComplete="email"
             />
           </View>
+
+          {verificationMethod === 'studentId' && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.text.secondary }]}>Student ID Card Photo</Text>
+              <Pressable 
+                onPress={handlePickIdPhoto}
+                style={{ 
+                  height: 100, 
+                  borderRadius: 16, 
+                  borderWidth: 1.5, 
+                  borderStyle: 'dashed', 
+                  borderColor: studentIdPhoto ? brandColors.mintGreen : colors.border.default,
+                  backgroundColor: colors.background.subtle,
+                  alignItems: 'center',
+                  justify: 'center',
+                  flexDirection: 'row',
+                  gap: 10,
+                }}
+              >
+                <Ionicons 
+                  name={studentIdPhoto ? "checkmark-circle" : "camera-outline"} 
+                  size={24} 
+                  color={studentIdPhoto ? brandColors.mintGreen : colors.interactive.primary} 
+                />
+                <Text style={{ fontFamily: 'PlusJakartaSans-600SemiBold', fontSize: 14, color: studentIdPhoto ? brandColors.mintGreen : colors.text.primary }}>
+                  {studentIdPhoto ? 'ID Card Uploaded ✓ (Tap to change)' : 'Upload Student ID Photo'}
+                </Text>
+              </Pressable>
+            </View>
+          )}
 
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text.secondary }]}>College Name</Text>
@@ -226,7 +342,9 @@ export default function RegisterScreen() {
             {loading ? (
               <ActivityIndicator color={colors.interactive.primaryText} />
             ) : (
-              <Text style={[styles.buttonText, { color: colors.interactive.primaryText }]}>Send OTP</Text>
+              <Text style={[styles.buttonText, { color: colors.interactive.primaryText }]}>
+                {verificationMethod === 'email' ? 'Send OTP' : 'Create Account & Join'}
+              </Text>
             )}
           </Pressable>
         </View>

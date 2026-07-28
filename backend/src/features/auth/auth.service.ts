@@ -86,18 +86,31 @@ export class AuthService {
     const hashedOtp = await bcrypt.hash(otpCode, AUTH_CONST.BCRYPT_SALT_ROUNDS);
     const otpExpiresAt = new Date(Date.now() + TOKEN.OTP_EXPIRY_MINUTES * 60 * 1000); // 15 mins validity
 
+    const isStudentId = data.verificationMethod === 'studentId';
+
     const newUser = await authRepository.createUser({
       name: data.name,
       email: data.email,
       password: hashedPassword,
       college: data.college,
       homeCity: data.homeCity,
-      isEmailVerified: false,
-      status: 'active',
-      otpCode: hashedOtp,
-      otpExpiresAt,
+      isEmailVerified: isStudentId ? true : false,
+      studentIdPhotoUrl: data.studentIdPhotoUrl,
+      verificationMethod: data.verificationMethod || 'email',
+      status: isStudentId ? 'pending_id' : 'active',
+      otpCode: isStudentId ? undefined : hashedOtp,
+      otpExpiresAt: isStudentId ? undefined : otpExpiresAt,
       tokenVersion: 0,
     });
+
+    if (isStudentId) {
+      const tokens = await this.generateTokens(newUser._id.toString());
+      return {
+        user: this.formatUser(newUser),
+        tokens,
+        message: 'Registration successful via Student ID!',
+      };
+    }
 
     // Send OTP via email using Nodemailer asynchronously
     mailerService.sendOTP(newUser.email, otpCode).catch((e) => {

@@ -4,6 +4,8 @@ export interface RegisterRequestDTO {
   password?: string;
   college?: string;
   homeCity?: string;
+  verificationMethod?: 'email' | 'studentId';
+  studentIdPhotoUrl?: string;
 }
 
 export interface VerifyOTPRequestDTO {
@@ -33,6 +35,7 @@ export interface ResetPasswordRequestDTO {
 
 export interface RegisterResult {
   user?: UserResponseDTO;
+  tokens?: AuthTokens;
   message: string;
 }
 
