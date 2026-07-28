@@ -51,14 +51,13 @@ export default function RegisterScreen() {
 
   const handlePickIdPhoto = async () => {
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       if (!permissionResult.granted) {
-        setError('Permission to access camera roll is required!');
+        setError('Camera permission is required to take a live photo of your Student ID!');
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         quality: 0.7,
         base64: true,
@@ -70,7 +69,7 @@ export default function RegisterScreen() {
         setStudentIdPhoto(photoData);
       }
     } catch (e: any) {
-      setError('Failed to pick image');
+      setError('Failed to capture photo');
     }
   };
 
@@ -215,7 +214,7 @@ export default function RegisterScreen() {
                   color={studentIdPhoto ? brandColors.mintGreen : colors.interactive.primary} 
                 />
                 <Text style={{ fontFamily: 'PlusJakartaSans-600SemiBold', fontSize: 14, color: studentIdPhoto ? brandColors.mintGreen : colors.text.primary }}>
-                  {studentIdPhoto ? 'ID Card Uploaded ✓ (Tap to change)' : 'Upload Student ID Photo'}
+                  {studentIdPhoto ? 'Live ID Photo Captured ✓ (Tap to retake)' : '📷 Take Live Photo of Student ID'}
                 </Text>
               </Pressable>
             </View>

@@ -64,6 +64,11 @@ const UserSchema = new Schema<IUser>(
     studentIdPhotoUrl: { 
       type: String 
     },
+    verificationMethod: {
+      type: String,
+      enum: ['email', 'studentId'],
+      default: 'email'
+    },
     upiId: {
       type: String,
       trim: true
