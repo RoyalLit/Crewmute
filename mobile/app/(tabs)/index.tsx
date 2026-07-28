@@ -12,7 +12,7 @@ import { RideCard } from '../../src/components/RideCard';
 import { useBrowseRidesQuery } from '../../src/api/ridesHooks';
 import { CityAutocomplete } from '../../src/components/CityAutocomplete';
 import { EmptyState } from '../../src/components/EmptyState';
-import { FilterBottomSheet, FilterBottomSheetRef, FilterOptions } from '../../src/components/FilterBottomSheet';
+import { FilterBottomSheet, type FilterBottomSheetRef, type FilterOptions } from '../../src/components/FilterBottomSheet';
 import { useRouter } from 'expo-router';
 
 export default function ExploreScreen(): React.JSX.Element {

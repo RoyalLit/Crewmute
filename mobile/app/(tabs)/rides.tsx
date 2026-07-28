@@ -12,7 +12,7 @@ import { TAB_BAR_HEIGHT, spacing, brandColors } from '../../src/design/tokens';
 import { TicketRideCard } from '../../src/components/TicketRideCard';
 import { IncomingRequestItem } from '../../src/components/IncomingRequestItem';
 import { EmptyState } from '../../src/components/EmptyState';
-import { LeaveReviewSheet, LeaveReviewSheetRef } from '../../src/components/LeaveReviewSheet';
+import { LeaveReviewSheet, type LeaveReviewSheetRef } from '../../src/components/LeaveReviewSheet';
 import { useMyRidesQuery, useCancelRideMutation } from '../../src/api/ridesHooks';
 import { useMyRequestsQuery, useIncomingRequestsQuery } from '../../src/api/requestsHooks';
 import { getDerivedRideStatus } from '../../src/utils/rideUtils';

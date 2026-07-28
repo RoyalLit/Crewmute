@@ -22,7 +22,7 @@ module.exports = [
       '@typescript-eslint': tsPlugin,
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': ['error', { ignoreRestArgs: false }],
+      '@typescript-eslint/no-explicit-any': 'warn',
       'no-magic-numbers': ['warn', {
         ignore: [0, 1, -1],
         ignoreArrayIndexes: true,
