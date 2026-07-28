@@ -204,7 +204,7 @@ export default function RegisterScreen() {
                   borderColor: studentIdPhoto ? brandColors.mintGreen : colors.border.default,
                   backgroundColor: colors.background.subtle,
                   alignItems: 'center',
-                  justify: 'center',
+                  justifyContent: 'center',
                   flexDirection: 'row',
                   gap: 10,
                 }}

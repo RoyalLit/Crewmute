@@ -9,6 +9,7 @@ export interface IUser extends Document {
   homeCity?: string;
   profilePhotoUrl?: string;
   studentIdPhotoUrl?: string;
+  verificationMethod?: 'email' | 'studentId';
   upiId?: string;
   emergencyContacts?: Array<{ name: string; phone: string }>;
   

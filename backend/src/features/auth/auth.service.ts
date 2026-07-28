@@ -11,6 +11,7 @@ import { mailerService } from '../../shared/mailer';
 
 import { authRepository } from './auth.repository';
 import type { RegisterRequestDTO, LoginRequestDTO, VerifyOTPRequestDTO, ResendOTPRequestDTO, AuthTokens, UserResponseDTO, JwtPayload, RegisterResult } from './auth.types';
+import { verifyStudentIdWithAI } from './studentIdVerifier.service';
 
 
 // Node's native jsonwebtoken library is typically used for JWTs
@@ -88,6 +89,14 @@ export class AuthService {
 
     const isStudentId = data.verificationMethod === 'studentId';
 
+    let isVerifiedByAI = false;
+    if (isStudentId && data.studentIdPhotoUrl) {
+      const aiResult = await verifyStudentIdWithAI(data.studentIdPhotoUrl, data.name, data.college || '');
+      if (aiResult.isVerified && aiResult.confidence >= 0.7) {
+        isVerifiedByAI = true;
+      }
+    }
+
     const newUser = await authRepository.createUser({
       name: data.name,
       email: data.email,
@@ -95,20 +104,23 @@ export class AuthService {
       college: data.college,
       homeCity: data.homeCity,
       isEmailVerified: isStudentId ? true : false,
+      isCollegeVerified: isVerifiedByAI,
       studentIdPhotoUrl: data.studentIdPhotoUrl,
       verificationMethod: data.verificationMethod || 'email',
-      status: isStudentId ? 'pending_id' : 'active',
+      status: isVerifiedByAI ? 'active' : (isStudentId ? 'pending_id' : 'active'),
       otpCode: isStudentId ? undefined : hashedOtp,
       otpExpiresAt: isStudentId ? undefined : otpExpiresAt,
       tokenVersion: 0,
     });
 
     if (isStudentId) {
-      const tokens = await this.generateTokens(newUser._id.toString());
+      const tokens = await this.generateTokens(newUser._id.toString(), newUser.tokenVersion);
       return {
         user: this.formatUser(newUser),
         tokens,
-        message: 'Registration successful via Student ID!',
+        message: isVerifiedByAI 
+          ? 'Registration successful! Your Student ID was verified by AI.' 
+          : 'Registration successful! Your Student ID has been submitted for admin verification.',
       };
     }
 
