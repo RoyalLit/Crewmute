@@ -217,7 +217,18 @@ export default function RideDetailScreen() {
                       onPress: async () => {
                         try {
                           const { apiClient } = require('../../src/api/client');
-                          try { await apiClient.post('/safety/sos', { rideId: ride.id }); } catch (e) {}
+                          const Location = await import('expo-location');
+                          let lat: number | undefined;
+                          let lng: number | undefined;
+                          try {
+                            const currentLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                            lat = currentLoc.coords.latitude;
+                            lng = currentLoc.coords.longitude;
+                          } catch (locErr) {}
+
+                          try { 
+                            await apiClient.post('/safety/sos', { rideId: ride.id, latitude: lat, longitude: lng }); 
+                          } catch (e) {}
                           const SMS = await import('expo-sms');
                           const isAvailable = await SMS.isAvailableAsync();
                           if (isAvailable) {
