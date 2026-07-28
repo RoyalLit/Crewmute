@@ -124,14 +124,35 @@ export default function RootLayout(): React.JSX.Element | null {
     if (!fontsLoaded || !isAuthChecked) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const onPermissionsScreen = segments[0] === 'permissions';
 
-    if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to the auth splash screen
-      router.replace('/(auth)');
-    } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to the tabs page.
-      router.replace('/(tabs)');
-    }
+    const checkAndRedirect = async () => {
+      if (!isAuthenticated && !inAuthGroup) {
+        router.replace('/(auth)');
+      } else if (isAuthenticated) {
+        try {
+          const Location = await import('expo-location');
+          const ImagePicker = await import('expo-image-picker');
+          const Notifications = await import('expo-notifications');
+
+          const loc = await Location.getForegroundPermissionsAsync();
+          const cam = await ImagePicker.getCameraPermissionsAsync();
+          const notif = await Notifications.getPermissionsAsync();
+
+          const allGranted = loc.granted && cam.granted && notif.granted;
+
+          if (!allGranted && !onPermissionsScreen) {
+            router.replace('/permissions');
+          } else if (allGranted && (inAuthGroup || onPermissionsScreen)) {
+            router.replace('/(tabs)');
+          }
+        } catch (e) {
+          if (inAuthGroup) router.replace('/(tabs)');
+        }
+      }
+    };
+
+    checkAndRedirect();
   }, [isAuthenticated, segments, fontsLoaded, isAuthChecked]);
 
   // ── Push notification deep linking (M13) ─────────────────────────────────
@@ -171,6 +192,7 @@ export default function RootLayout(): React.JSX.Element | null {
                   <Stack.Screen name="emergency-contacts" />
                   <Stack.Screen name="privacy-policy" />
                   <Stack.Screen name="terms-of-service" />
+                  <Stack.Screen name="permissions" />
                   <Stack.Screen name="report/[userId]" />
                   <Stack.Screen name="review/[userId]" />
                   <Stack.Screen name="user/[userId]/reviews" />
